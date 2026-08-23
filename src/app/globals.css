@@ -1,0 +1,67 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+  --muted: #b7b7b7;
+  --card: #141414;
+  --accent: #12c8b0;
+  --accent-2: #7dffe9;
+  --primary: #12c8b0;
+  --primary-foreground: #04120f;
+  --border: rgb(255 255 255 / 0.16);
+  --ring: #12c8b0;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-card: var(--card);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #000;
+  color: #fff;
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 40%, transparent);
+  color: #fff;
+}
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.reveal-in {
+  animation: reveal-in 0.7s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-in {
+    animation: none;
+  }
+}
