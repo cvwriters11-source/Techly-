@@ -9,13 +9,16 @@ export function Logo({
   compact?: boolean;
 }) {
   return (
-    <span className={cn("inline-flex items-center", className)}>
+    <span className={cn("inline-flex shrink-0 items-center", className)}>
       <Image
-        src="/logo.png"
+        src="/techly-badge.png"
         alt="Techly — Software Development and IT Support"
-        width={compact ? 140 : 168}
-        height={compact ? 56 : 68}
-        className={cn("w-auto", compact ? "h-12" : "h-[68px]")}
+        width={compact ? 56 : 72}
+        height={compact ? 56 : 72}
+        className={cn(
+          "shrink-0 rounded-full bg-white object-contain",
+          compact ? "size-14" : "size-[72px]",
+        )}
         priority
       />
     </span>

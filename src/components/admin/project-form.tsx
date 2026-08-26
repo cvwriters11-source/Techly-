@@ -87,7 +87,7 @@ export function ProjectForm({
           name="imageUrl"
           defaultValue={project?.imageUrl}
           inputMode="url"
-          placeholder="https://…"
+          placeholder="https://… or /projects/screenshot.png"
           className={fieldClass}
         />
       </label>

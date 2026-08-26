@@ -1,6 +1,7 @@
 import { Check } from "lucide-react";
 import Image from "next/image";
 import { HeroSlider } from "@/components/hero-slider";
+import { ProjectCard } from "@/components/project-card";
 import { Reveal } from "@/components/reveal";
 import { Button } from "@/components/ui/button";
 import { Container, Section, SectionHeading } from "@/components/ui/section";
@@ -150,28 +151,7 @@ export default async function HomePage() {
             <div className="mt-12 grid gap-5 md:grid-cols-3">
               {featured.map((project, index) => (
                 <Reveal key={project.id} delay={index * 70}>
-                  <article className="flex h-full flex-col rounded-[1.6rem] border border-white/15 bg-[#111] p-7">
-                    <h3 className="text-lg font-semibold text-white">
-                      {project.title}
-                    </h3>
-                    {project.summary ? (
-                      <p className="mt-3 flex-1 text-sm leading-relaxed text-white/70">
-                        {project.summary}
-                      </p>
-                    ) : (
-                      <p className="mt-3 flex-1 text-sm text-white/45">
-                        Live client project
-                      </p>
-                    )}
-                    <a
-                      href={project.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-5 text-sm font-medium text-accent hover:text-white"
-                    >
-                      Visit live site
-                    </a>
-                  </article>
+                  <ProjectCard project={project} compact />
                 </Reveal>
               ))}
             </div>

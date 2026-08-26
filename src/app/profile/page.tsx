@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ArrowUpRight } from "lucide-react";
+import { ProjectCard } from "@/components/project-card";
 import { Reveal } from "@/components/reveal";
 import { Button } from "@/components/ui/button";
 import { Container, Section, SectionHeading } from "@/components/ui/section";
@@ -18,7 +18,7 @@ export default async function ProfilePage() {
 
   return (
     <>
-      <Section className="overflow-hidden pb-10 pt-16">
+      <Section className="overflow-hidden pb-4 pt-16 sm:pb-6">
         <div className="pointer-events-none absolute inset-0 bg-grid opacity-60" />
         <Container className="relative">
           <Reveal>
@@ -31,7 +31,7 @@ export default async function ProfilePage() {
         </Container>
       </Section>
 
-      <Section className="pt-0 pb-28">
+      <Section className="pt-0 pb-28 sm:pt-0">
         <Container>
           {projects.length === 0 ? (
             <p className="rounded-[1.8rem] border border-white/10 bg-[#111] px-6 py-10 text-center text-white/65">
@@ -41,37 +41,7 @@ export default async function ProfilePage() {
             <div className="grid gap-6 md:grid-cols-2">
               {projects.map((project, index) => (
                 <Reveal key={project.id} delay={index * 60}>
-                  <article className="flex h-full flex-col overflow-hidden rounded-[1.8rem] border border-white/10 bg-[#111]">
-                    {project.imageUrl ? (
-                      <div className="relative aspect-[16/9] bg-black">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={project.imageUrl}
-                          alt=""
-                          className="size-full object-cover"
-                        />
-                      </div>
-                    ) : null}
-                    <div className="flex flex-1 flex-col p-6 sm:p-7">
-                      <h2 className="text-xl font-semibold text-white">
-                        {project.title}
-                      </h2>
-                      {project.summary ? (
-                        <p className="mt-3 text-sm leading-relaxed text-white/70">
-                          {project.summary}
-                        </p>
-                      ) : null}
-                      <a
-                        href={project.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-white"
-                      >
-                        Visit live site
-                        <ArrowUpRight className="size-4" />
-                      </a>
-                    </div>
-                  </article>
+                  <ProjectCard project={project} />
                 </Reveal>
               ))}
             </div>

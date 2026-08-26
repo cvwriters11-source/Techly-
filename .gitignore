@@ -43,3 +43,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local deploy scratch
+.mcp-deploy-request.json
+.vercel-deploy*.json
+deploy-args-for-mcp.json
+deploy-result.json
+deploy-stdout.json
+mcp-call.json
+techly-app-*-args.json

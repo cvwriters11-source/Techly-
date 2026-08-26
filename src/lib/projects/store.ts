@@ -54,6 +54,25 @@ export function normalizeHttpUrl(raw: string) {
   return parsed.toString();
 }
 
+export function normalizeImageUrl(raw: string) {
+  const value = raw.trim();
+  if (!value) return "";
+  if (value.startsWith("/")) return value;
+  return normalizeHttpUrl(value);
+}
+
+export function projectPreviewSrc(project: Pick<ProjectRecord, "url" | "imageUrl">) {
+  return project.imageUrl || "";
+}
+
+export function projectHostname(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
 export async function listProjects() {
   const supabase = createAdminClient();
   const { data, error } = await supabase

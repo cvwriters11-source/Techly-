@@ -52,7 +52,7 @@ export async function submitTicket(
   if (phone.length < 7) fieldErrors.phone = "Please enter a phone number.";
   if (problems.length === 0) {
     fieldErrors.problems = "Please choose at least one problem.";
-  } else if (problems.some((problem) => !allTicketProblems.includes(problem))) {
+  } else if (problems.some((problem) => !isIn(problem, allTicketProblems))) {
     fieldErrors.problems = "Please choose from the listed problems.";
   }
   if (!isIn(urgency, ticketUrgency)) {

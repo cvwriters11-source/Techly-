@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/admin/session";
 import {
   deleteProject,
   normalizeHttpUrl,
+  normalizeImageUrl,
   saveProject,
   updateProject,
 } from "@/lib/projects/store";
@@ -29,8 +30,7 @@ function readProjectFields(formData: FormData) {
   let imageUrl = "";
   try {
     url = normalizeHttpUrl(String(formData.get("url") ?? ""));
-    const imageRaw = String(formData.get("imageUrl") ?? "").trim();
-    imageUrl = imageRaw ? normalizeHttpUrl(imageRaw) : "";
+    imageUrl = normalizeImageUrl(String(formData.get("imageUrl") ?? ""));
   } catch {
     return { error: "Enter a valid website link, including the domain." };
   }
