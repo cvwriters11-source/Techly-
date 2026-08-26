@@ -81,15 +81,19 @@ export function ProjectForm({
       </label>
       <label className="block">
         <span className="mb-2 block text-sm font-medium text-white">
-          Image link (optional)
+          Screenshot (optional)
         </span>
         <input
           name="imageUrl"
           defaultValue={project?.imageUrl}
           inputMode="url"
-          placeholder="https://… or /projects/screenshot.png"
+          placeholder="Leave blank to show the live website"
           className={fieldClass}
         />
+        <span className="mt-2 block text-xs leading-relaxed text-white/45">
+          Leave blank and the card will display the live website from the link
+          above.
+        </span>
       </label>
       <label className="block max-w-[12rem]">
         <span className="mb-2 block text-sm font-medium text-white">

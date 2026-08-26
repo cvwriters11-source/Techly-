@@ -61,8 +61,13 @@ export function normalizeImageUrl(raw: string) {
   return normalizeHttpUrl(value);
 }
 
+export function liveWebsitePreviewSrc(url: string) {
+  if (!url.trim()) return "";
+  return `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`;
+}
+
 export function projectPreviewSrc(project: Pick<ProjectRecord, "url" | "imageUrl">) {
-  return project.imageUrl || "";
+  return project.imageUrl.trim() || liveWebsitePreviewSrc(project.url);
 }
 
 export function projectHostname(url: string) {
