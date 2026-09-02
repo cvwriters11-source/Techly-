@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function ApproachPage() {
   return (
     <>
-      <Section className="overflow-hidden pb-10 pt-16">
+      <Section className="overflow-hidden pt-16 pb-8 sm:pt-16 sm:pb-8">
         <div className="pointer-events-none absolute inset-0 bg-grid opacity-60" />
         <Container className="relative">
           <Reveal>
@@ -26,8 +26,8 @@ export default function ApproachPage() {
         </Container>
       </Section>
 
-      <Section className="pt-0 pb-28">
-        <Container className="space-y-4">
+      <Section className="pt-0 pb-28 sm:pt-0 sm:pb-28">
+        <Container className="space-y-5">
           {steps.map((step, index) => (
             <Reveal key={step.number} delay={index * 70}>
               <article className="grid gap-6 rounded-[2rem] border border-white/8 bg-card p-7 md:grid-cols-[140px_1fr] md:items-center md:p-10">

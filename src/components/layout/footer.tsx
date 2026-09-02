@@ -84,7 +84,7 @@ export function Footer() {
       <div className="border-t border-white/10">
         <Container className="flex flex-col gap-2 py-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} {site.name}. All rights reserved.</p>
-          <p>Software development · IT support · Business automation</p>
+          <p>Software development · IT support · Business automation · CCTV installations</p>
         </Container>
       </div>
     </footer>

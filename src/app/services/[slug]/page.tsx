@@ -30,7 +30,7 @@ export default async function ServiceCategoryPage({ params }: Props) {
 
   return (
     <>
-      <Section className="overflow-hidden pb-10 pt-16">
+      <Section className="overflow-hidden pt-16 pb-8 sm:pt-16 sm:pb-8">
         <div className="pointer-events-none absolute inset-0 bg-grid opacity-60" />
         <Container className="relative">
           <Reveal>
@@ -43,19 +43,19 @@ export default async function ServiceCategoryPage({ params }: Props) {
         </Container>
       </Section>
 
-      <Section className="pt-0 pb-28">
+      <Section className="pt-0 pb-28 sm:pt-0 sm:pb-28">
         <Container>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {category.items.map((item, index) => (
-              <Reveal key={item} delay={index * 40}>
-                <article className="h-full rounded-3xl border border-white/8 bg-card p-6">
-                  <p className="font-mono text-[11px] text-accent">
+              <Reveal key={item} delay={index * 40} className="h-full">
+                <article className="flex h-full flex-col rounded-3xl border border-white/8 bg-card p-6">
+                  <p className="font-mono text-[11px] leading-none text-accent">
                     {String(index + 1).padStart(2, "0")}
                   </p>
-                  <h2 className="mt-4 font-display text-xl text-foreground">
+                  <h2 className="mt-5 font-display text-xl leading-snug text-foreground">
                     {item}
                   </h2>
-                  <p className="mt-3 text-sm leading-relaxed text-muted">
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-muted">
                     Scoped, built and supported as part of a wider {category.title.toLowerCase()} engagement — not a one-off ticket with no follow-through.
                   </p>
                 </article>
@@ -63,7 +63,7 @@ export default async function ServiceCategoryPage({ params }: Props) {
             ))}
           </div>
 
-          <div className="mt-12 rounded-[2rem] border border-white/10 bg-[#141414] px-8 py-10">
+          <div className="mt-10 rounded-[2rem] border border-white/10 bg-[#141414] px-8 py-10">
             <h2 className="font-display text-2xl text-foreground sm:text-3xl">
               Need this for your business?
             </h2>

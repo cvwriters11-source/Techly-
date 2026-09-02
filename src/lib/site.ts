@@ -151,6 +151,21 @@ export const homeServices = [
       "Cloud file servers and system integrations",
     ],
   },
+  {
+    href: "/services/cctv-installations",
+    title: "CCTV Camera Installations",
+    text: "Techly installs CCTV camera systems for businesses and homes — IP or analogue cameras, recording, remote viewing and onsite cabling — so your premises stay visible and easier to secure.",
+    image:
+      "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=1400&q=80",
+    imageAlt: "Security camera installed on a commercial building",
+    items: [
+      "Supply and installation of CCTV cameras",
+      "DVR / NVR recording and remote viewing",
+      "Indoor, outdoor and night-vision coverage",
+      "Cabling, mounting and configuration",
+      "Maintenance, repairs and camera upgrades",
+    ],
+  },
 ] as const;
 
 export const principles = [
@@ -242,6 +257,26 @@ export const serviceCategories = [
       "Integrations between business systems",
     ],
   },
+  {
+    slug: "cctv-installations",
+    href: "/services/cctv-installations",
+    title: "CCTV Camera Installations",
+    eyebrow: "Secure",
+    summary:
+      "Professional CCTV camera installations for offices, warehouses, retail and homes — so you can see what is happening on site, on your phone or at your desk.",
+    description:
+      "We supply, install and maintain CCTV systems with remote viewing, night vision and the cabling done properly — not a DIY kit left half-finished.",
+    items: [
+      "CCTV camera installations",
+      "IP and analogue camera systems",
+      "DVR / NVR setup and recording",
+      "Remote viewing on phone and desktop",
+      "Indoor, outdoor and night-vision cameras",
+      "Office, warehouse, retail and home sites",
+      "Cabling, mounting and configuration",
+      "Maintenance, repairs and camera upgrades",
+    ],
+  },
 ] as const;
 
 export const steps = [
@@ -296,6 +331,7 @@ export const serviceOptions = [
   "Software Development",
   "IT Support",
   "Business Automation",
+  "CCTV Camera Installations",
   "Not sure — I need advice",
 ] as const;
 
@@ -365,6 +401,17 @@ export const ticketProblemGroups = [
       "Need cloud file storage or a shared drive",
       "Need a cloud or application server",
       "I want AI to help with a business process",
+    ],
+  },
+  {
+    category: "CCTV Camera Installations",
+    intro: "Cameras, recording and remote viewing for your premises.",
+    problems: [
+      "I need CCTV cameras installed",
+      "I need cameras with remote viewing on my phone",
+      "Existing CCTV is not recording or is down",
+      "I need extra cameras or a system upgrade",
+      "I need CCTV maintenance or repairs",
     ],
   },
   {

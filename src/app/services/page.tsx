@@ -3,33 +3,49 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Reveal } from "@/components/reveal";
 import { Button } from "@/components/ui/button";
-import { Container, Section, SectionHeading } from "@/components/ui/section";
+import { Container, Section } from "@/components/ui/section";
 import { serviceCategories } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Services",
   description:
-    "Custom software development, IT support and business automation — organised so you can find the right starting point quickly.",
+    "Software development, IT support, business automation, hosting and CCTV camera installations from Techly.",
 };
 
 export default function ServicesPage() {
   return (
     <>
-      <Section className="overflow-hidden pb-10 pt-16">
+      <Section className="overflow-hidden pt-16 pb-8 sm:pt-16 sm:pb-8">
         <div className="pointer-events-none absolute inset-0 bg-grid opacity-60" />
         <Container className="relative">
           <Reveal>
-            <SectionHeading
-              eyebrow="Services"
-              title="Clear categories. Practical outcomes."
-              description="Explore the work we do most often — from custom platforms and integrations to helpdesk support, Microsoft 365 and workflow automation."
-            />
+            <div className="mx-auto max-w-3xl text-center">
+              <div className="flex flex-wrap justify-center gap-2">
+                {serviceCategories.map((category) => (
+                  <Link
+                    key={category.href}
+                    href={category.href}
+                    className="whitespace-nowrap rounded-full border border-white/20 bg-white/5 px-3.5 py-1.5 text-[13px] font-medium text-white transition hover:border-accent/70 hover:bg-white/10 md:text-sm"
+                  >
+                    {category.title}
+                  </Link>
+                ))}
+              </div>
+              <h2 className="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-[2.6rem] lg:leading-tight">
+                Every service we offer.
+              </h2>
+              <p className="mt-5 text-base leading-relaxed text-white/80 sm:text-lg">
+                Software development, websites, IT support, Microsoft 365,
+                hosting, workflow automation, and CCTV camera installations —
+                the full Techly range, in one place.
+              </p>
+            </div>
           </Reveal>
         </Container>
       </Section>
 
-      <Section className="pt-0 pb-28">
-        <Container className="space-y-6">
+      <Section className="pt-0 pb-28 sm:pt-0 sm:pb-28">
+        <Container className="space-y-5">
           {serviceCategories.map((category, index) => (
             <Reveal key={category.href} delay={index * 70}>
               <article className="overflow-hidden rounded-[2rem] border border-white/8 bg-card">

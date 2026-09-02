@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <Section className="overflow-hidden pb-12 pt-16">
+      <Section className="overflow-hidden pt-16 pb-8 sm:pt-16 sm:pb-8">
         <div className="pointer-events-none absolute inset-0 bg-grid opacity-60" />
         <Container className="relative">
           <Reveal>
@@ -25,7 +25,7 @@ export default function AboutPage() {
         </Container>
       </Section>
 
-      <Section className="pt-0">
+      <Section className="pt-0 sm:pt-0">
         <Container className="grid gap-6 lg:grid-cols-2">
           <Reveal>
             <article className="h-full rounded-3xl border border-white/8 bg-card p-8">
@@ -92,7 +92,7 @@ export default function AboutPage() {
             <SectionHeading
               eyebrow="Experience & expertise"
               title="Practical delivery across software, infrastructure and automation."
-              description="Our work covers custom web and mobile applications, business platforms, integrations, Microsoft 365 environments, cybersecurity basics, and the workflows that sit between them."
+              description="Our work covers custom web and mobile applications, business platforms, integrations, Microsoft 365 environments, cybersecurity, CCTV camera installations, and the workflows that sit between them."
             />
           </Reveal>
           <Reveal delay={80}>
@@ -115,7 +115,7 @@ export default function AboutPage() {
         </Container>
       </Section>
 
-      <Section className="pt-0 pb-28">
+      <Section className="pt-0 pb-28 sm:pt-0 sm:pb-28">
         <Container>
           <div className="rounded-[2rem] border border-white/10 bg-card px-8 py-12 sm:px-12">
             <h2 className="font-display text-3xl text-foreground">

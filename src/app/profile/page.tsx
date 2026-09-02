@@ -18,7 +18,7 @@ export default async function ProfilePage() {
 
   return (
     <>
-      <Section className="overflow-hidden pb-4 pt-16 sm:pb-6">
+      <Section className="overflow-hidden pt-16 pb-8 sm:pt-16 sm:pb-8">
         <div className="pointer-events-none absolute inset-0 bg-grid opacity-60" />
         <Container className="relative">
           <Reveal>
@@ -31,7 +31,7 @@ export default async function ProfilePage() {
         </Container>
       </Section>
 
-      <Section className="pt-0 pb-28 sm:pt-0">
+      <Section className="pt-0 pb-28 sm:pt-0 sm:pb-28">
         <Container>
           {projects.length === 0 ? (
             <p className="rounded-[1.8rem] border border-white/10 bg-[#111] px-6 py-10 text-center text-white/65">
