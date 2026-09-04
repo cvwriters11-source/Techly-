@@ -7,6 +7,7 @@ import { RecordUpdateForm } from "@/components/admin/record-update-form";
 import {
   contactStatusLabel,
   formatDateTime,
+  formatOrderNumber,
   statusTone,
 } from "@/lib/inbox/format";
 import { isEmailConfigured } from "@/lib/email";
@@ -40,7 +41,9 @@ export default async function AdminContactDetailPage({
             className={statusTone(contact.status)}
           />
         </div>
-        <p className="mt-2 text-sm text-white/50">{contact.id}</p>
+        <p className="mt-2 text-sm text-white/50">
+          Order number {formatOrderNumber(contact.id)}
+        </p>
       </div>
 
       <DetailList

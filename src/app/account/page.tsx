@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/admin/detail-list";
 import { requireClientUser, linkTicketsToUser } from "@/lib/client-auth";
 import {
   formatDateTime,
+  formatOrderNumber,
   statusTone,
   ticketStatusLabel,
   urgencyTone,
@@ -75,7 +76,7 @@ export default async function AccountPage() {
                       {ticket.problems[0] || "Support ticket"}
                     </p>
                     <p className="mt-1 text-xs text-white/45">
-                      {formatDateTime(ticket.createdAt)} · {ticket.company}
+                      {formatOrderNumber(ticket.id)} · {formatDateTime(ticket.createdAt)} · {ticket.company}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">

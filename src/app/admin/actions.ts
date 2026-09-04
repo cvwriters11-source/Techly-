@@ -194,6 +194,9 @@ export async function saveContactUpdate(
   }
 
   if (!contact.email) {
+    if (status === "closed") {
+      redirect("/admin/contacts?closed=1&email=missing");
+    }
     return {
       ok: false,
       message: "Request updated, but this client has no email address.",
@@ -207,7 +210,11 @@ export async function saveContactUpdate(
     recordId: contact.id,
     recordLabel: "enquiry",
     statusLabel: contactStatusLabel(contact.status),
-    note: contact.adminNote,
+    note:
+      contact.adminNote ||
+      (status === "closed"
+        ? "Your enquiry has been marked as closed. If you still need help, reply to this email."
+        : ""),
     invoice: parsedInvoice.include ? parsedInvoice.invoice : null,
   });
 
@@ -219,6 +226,14 @@ export async function saveContactUpdate(
       },
     });
     revalidatePath(`/admin/contacts/${id}`);
+  }
+
+  if (status === "closed") {
+    redirect(
+      emailed.ok
+        ? "/admin/contacts?closed=1"
+        : "/admin/contacts?closed=1&email=failed",
+    );
   }
 
   if (!emailed.ok) {

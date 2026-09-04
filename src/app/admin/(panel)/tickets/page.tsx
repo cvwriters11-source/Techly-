@@ -3,6 +3,7 @@ import Link from "next/link";
 import { StatusBadge } from "@/components/admin/detail-list";
 import {
   formatDateTime,
+  formatOrderNumber,
   statusTone,
   ticketStatusLabel,
   urgencyTone,
@@ -73,7 +74,8 @@ export default async function AdminTicketsPage({
                     {ticket.name}
                   </p>
                   <p className="mt-0.5 text-xs break-words text-white/45">
-                    {ticket.company}
+                    {formatOrderNumber(ticket.id)}
+                    {ticket.company ? ` · ${ticket.company}` : ""}
                   </p>
                 </div>
                 <StatusBadge

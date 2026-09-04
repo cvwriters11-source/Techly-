@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
+import { site } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://techly.co.za";
+  const base = site.url;
   const routes = [
     "",
     "/about",

@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { site } from "@/lib/site";
-import { formatDate, formatZar } from "@/lib/inbox/format";
+import { formatDate, formatOrderNumber, formatZar } from "@/lib/inbox/format";
 import type { InvoiceDetails } from "@/lib/inbox/invoice";
 
 export type SendEmailResult = { ok: true } | { ok: false; error: string };
@@ -204,7 +204,7 @@ export async function sendClientUpdateEmail(input: ClientUpdateEmail) {
     "",
     intro,
     "",
-    `Reference: ${input.recordId}`,
+    `Reference: ${formatOrderNumber(input.recordId)}`,
     `Status: ${input.statusLabel}`,
     ...(note ? ["", "Message from Techly:", note] : []),
     ...(invoice
@@ -243,7 +243,7 @@ export async function sendClientUpdateEmail(input: ClientUpdateEmail) {
               <td style="padding:0 28px 20px;font-size:15px;line-height:1.6;color:#d6d6d6;">
                 Hi ${escapeHtml(input.name)},<br /><br />
                 ${escapeHtml(intro)}<br /><br />
-                Reference <strong style="color:#ffffff;">${escapeHtml(input.recordId)}</strong>
+                Reference <strong style="color:#ffffff;">${escapeHtml(formatOrderNumber(input.recordId))}</strong>
                 ${input.company ? ` for ${escapeHtml(input.company)}` : ""}.
               </td>
             </tr>
@@ -317,8 +317,8 @@ export async function notifyAdminInbox(alert: AdminInboxAlert) {
   const title = titles[alert.kind];
   const path =
     alert.kind === "contact"
-      ? `/admin/contacts/${alert.recordId}`
-      : `/admin/tickets/${alert.recordId}`;
+      ? `/admin/contacts/${encodeURIComponent(alert.recordId)}`
+      : `/admin/tickets/${encodeURIComponent(alert.recordId)}`;
   const href = `${adminBaseUrl()}${path}`;
 
   const text = [
@@ -328,7 +328,7 @@ export async function notifyAdminInbox(alert: AdminInboxAlert) {
     `Email: ${alert.email}`,
     `Phone: ${alert.phone}`,
     ...(alert.urgency ? [`Urgency: ${alert.urgency}`] : []),
-    `Reference: ${alert.recordId}`,
+    `Reference: ${formatOrderNumber(alert.recordId)}`,
     "",
     alert.summary,
     "",
@@ -361,7 +361,7 @@ export async function notifyAdminInbox(alert: AdminInboxAlert) {
               <td style="padding:0 28px 20px;">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;border:1px solid #2a2a2a;border-radius:12px;">
                   <tr>
-                    <td style="padding:14px 16px 6px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;">${escapeHtml(alert.recordId)}</td>
+                    <td style="padding:14px 16px 6px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;">${escapeHtml(formatOrderNumber(alert.recordId))}</td>
                   </tr>
                   <tr>
                     <td style="padding:0 16px 10px;font-size:16px;font-weight:700;color:#ffffff;">${escapeHtml(alert.summary)}</td>

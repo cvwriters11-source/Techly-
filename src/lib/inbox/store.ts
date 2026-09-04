@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto";
 import { emptyInvoice, type InvoiceDetails } from "@/lib/inbox/invoice";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -88,12 +87,6 @@ type ContactRow = {
   invoice_payment_details: string | null;
   invoice_sent_at: string | null;
 };
-
-function createId(prefix: string) {
-  const stamp = Date.now().toString(36).toUpperCase();
-  const noise = randomBytes(3).toString("hex").toUpperCase();
-  return `${prefix}-${stamp}-${noise}`;
-}
 
 function toAmount(value: number | string | null | undefined) {
   if (value === null || value === undefined || value === "") return null;
@@ -189,7 +182,6 @@ export async function saveTicket(
   const { data, error } = await supabase
     .from("tickets")
     .insert({
-      id: createId("TCK"),
       status: "new",
       admin_note: "",
       client_type: input.clientType,
@@ -221,7 +213,6 @@ export async function saveContact(
   const { data, error } = await supabase
     .from("contacts")
     .insert({
-      id: createId("CNT"),
       status: "new",
       admin_note: "",
       name: input.name,
@@ -279,12 +270,20 @@ export async function countNewInbox() {
   };
 }
 
+function recordId(id: string) {
+  try {
+    return decodeURIComponent(id);
+  } catch {
+    return id;
+  }
+}
+
 export async function getTicket(id: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("tickets")
     .select("*")
-    .eq("id", id)
+    .eq("id", recordId(id))
     .maybeSingle();
 
   throwIfError(error);
@@ -296,7 +295,7 @@ export async function getContact(id: string) {
   const { data, error } = await supabase
     .from("contacts")
     .select("*")
-    .eq("id", id)
+    .eq("id", recordId(id))
     .maybeSingle();
 
   throwIfError(error);

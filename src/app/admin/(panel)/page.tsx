@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/admin/detail-list";
 import {
   contactStatusLabel,
   formatDateTime,
+  formatOrderNumber,
   statusTone,
   ticketStatusLabel,
   urgencyTone,
@@ -25,6 +26,7 @@ export default async function AdminDashboardPage() {
       ticket.urgency.toLowerCase().includes("urgent"),
   );
   const newContacts = contacts.filter((contact) => contact.status === "new");
+  const openContacts = contacts.filter((contact) => contact.status !== "closed");
 
   const stats = [
     {
@@ -109,7 +111,7 @@ export default async function AdminDashboardPage() {
                     </div>
                     <p className="mt-1 text-sm text-white/55">{ticket.company}</p>
                     <p className="mt-1 text-xs text-white/40">
-                      {formatDateTime(ticket.createdAt)} · {ticket.problems[0]}
+                      {formatOrderNumber(ticket.id)} · {formatDateTime(ticket.createdAt)} · {ticket.problems[0]}
                     </p>
                   </Link>
                 </li>
@@ -125,14 +127,15 @@ export default async function AdminDashboardPage() {
               View all
             </Link>
           </div>
-          {contacts.length === 0 ? (
+          {openContacts.length === 0 ? (
             <p className="text-sm text-white/50">
-              No consultation requests yet. Contact us form submissions will
-              appear here.
+              {contacts.length === 0
+                ? "No consultation requests yet. Contact us form submissions will appear here."
+                : "No open requests. Closed requests leave this list."}
             </p>
           ) : (
             <ul className="space-y-3">
-              {contacts.slice(0, 6).map((contact) => (
+              {openContacts.slice(0, 6).map((contact) => (
                 <li key={contact.id}>
                   <Link
                     href={`/admin/contacts/${contact.id}`}
@@ -149,7 +152,7 @@ export default async function AdminDashboardPage() {
                       {contact.company} · {contact.service}
                     </p>
                     <p className="mt-1 text-xs text-white/40">
-                      {formatDateTime(contact.createdAt)}
+                      {formatOrderNumber(contact.id)} · {formatDateTime(contact.createdAt)}
                     </p>
                   </Link>
                 </li>

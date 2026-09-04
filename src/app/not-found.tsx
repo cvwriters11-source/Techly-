@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/section";
@@ -5,7 +6,9 @@ import { Container } from "@/components/ui/section";
 export default function NotFound() {
   return (
     <Container className="flex flex-col items-start py-28">
-      <Logo />
+      <Link href="/" aria-label="Techly home">
+        <Logo />
+      </Link>
       <h1 className="mt-10 font-display text-4xl font-semibold">
         Page not found
       </h1>

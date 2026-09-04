@@ -1,3 +1,9 @@
+export function formatOrderNumber(id: string) {
+  const match = id.trim().match(/^TECHLYPC[-\s]+(\d+)$/i);
+  if (!match) return id;
+  return `TECHLYPC ${match[1].padStart(3, "0")}`;
+}
+
 export function formatDateTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;

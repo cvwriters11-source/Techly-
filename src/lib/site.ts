@@ -1,6 +1,7 @@
 export const site = {
   name: "Techly",
   legalName: "Techly",
+  url: "https://techlypc.co.za",
   tagline: "Custom Software & IT Solutions Built Around Your Business",
   headline: "BUILD. AUTOMATE. CONNECT. GROW.",
   description:

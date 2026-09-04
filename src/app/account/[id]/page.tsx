@@ -7,6 +7,7 @@ import { Container, Section } from "@/components/ui/section";
 import { requireClientUser } from "@/lib/client-auth";
 import {
   formatDateTime,
+  formatOrderNumber,
   statusTone,
   ticketStatusLabel,
   urgencyTone,
@@ -47,7 +48,9 @@ export default async function AccountTicketPage({
             className={urgencyTone(ticket.urgency)}
           />
         </div>
-        <p className="mt-2 text-sm text-white/50">{ticket.id}</p>
+        <p className="mt-2 text-sm text-white/50">
+          Order number {formatOrderNumber(ticket.id)}
+        </p>
 
         <div className="mt-8">
           <DetailList

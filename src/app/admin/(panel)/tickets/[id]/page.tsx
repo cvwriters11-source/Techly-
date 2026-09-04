@@ -6,6 +6,7 @@ import { DetailList, StatusBadge } from "@/components/admin/detail-list";
 import { RecordUpdateForm } from "@/components/admin/record-update-form";
 import {
   formatDateTime,
+  formatOrderNumber,
   statusTone,
   ticketStatusLabel,
   urgencyTone,
@@ -45,7 +46,9 @@ export default async function AdminTicketDetailPage({
             className={urgencyTone(ticket.urgency)}
           />
         </div>
-        <p className="mt-2 text-sm text-white/50">{ticket.id}</p>
+        <p className="mt-2 text-sm text-white/50">
+          Order number {formatOrderNumber(ticket.id)}
+        </p>
       </div>
 
       <DetailList

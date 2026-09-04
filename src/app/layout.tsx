@@ -5,7 +5,7 @@ import { site } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://techly.co.za"),
+  metadataBase: new URL(site.url),
   title: {
     default: `${site.name} · Software Development & IT Solutions`,
     template: `%s · ${site.name}`,
@@ -14,7 +14,15 @@ export const metadata: Metadata = {
   openGraph: {
     title: `${site.name} · ${site.tagline}`,
     description: site.description,
+    url: site.url,
+    siteName: site.name,
     type: "website",
+    locale: "en_ZA",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${site.name} · ${site.tagline}`,
+    description: site.description,
   },
 };
 

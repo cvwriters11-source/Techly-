@@ -8,7 +8,9 @@ export function Footer() {
     <footer className="border-t border-white/10 bg-black">
       <Container className="grid gap-12 py-16 sm:grid-cols-2 lg:grid-cols-4">
         <div className="lg:col-span-1">
-          <Logo compact />
+          <Link href="/" aria-label="Techly home">
+            <Logo compact />
+          </Link>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
             {site.tagline}
           </p>

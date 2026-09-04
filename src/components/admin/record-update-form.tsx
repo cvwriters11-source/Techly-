@@ -91,8 +91,12 @@ export function RecordUpdateForm({
         />
         {notifyEmail ? (
           <span className="mt-2 block text-xs text-white/45">
-            Saving emails the status and this note to {notifyEmail}. Marking a
-          ticket as Resolved removes it from the open list.
+            Saving emails the status and this note to {notifyEmail}.
+            {statuses.some((option) => option.value === "closed")
+              ? " Marking Closed removes it from the open list."
+              : statuses.some((option) => option.value === "resolved")
+                ? " Marking Resolved removes it from the open list."
+                : ""}
           </span>
         ) : null}
       </label>

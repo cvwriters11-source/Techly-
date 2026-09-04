@@ -17,6 +17,8 @@ export function emptyInvoice(): InvoiceDetails {
 }
 
 export function suggestedInvoiceNumber(recordId: string) {
+  const match = recordId.trim().match(/^TECHLYPC[-\s]+(\d+)$/i);
+  if (match) return `INV-TECHLYPC-${match[1].padStart(3, "0")}`;
   return `INV-TECHLYPC-${recordId}`;
 }
 
