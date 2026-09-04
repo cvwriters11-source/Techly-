@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { CheckCircle2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,16 @@ function Field({
   );
 }
 
-export function TicketForm() {
+export function TicketForm({
+  defaults,
+}: {
+  defaults?: {
+    name?: string;
+    company?: string;
+    email?: string;
+    clientType?: string;
+  };
+}) {
   const [state, action, pending] = useActionState(submitTicket, initial);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
@@ -74,6 +84,11 @@ export function TicketForm() {
         <CheckCircle2 className="size-8 text-accent" />
         <h3 className="mt-4 text-2xl font-semibold text-white">Ticket logged</h3>
         <p className="mt-3 text-sm leading-relaxed text-white/75">{state.message}</p>
+        {state.accountLink ? (
+          <Link href="/account" className="mt-5 inline-block text-sm text-accent">
+            View my tickets
+          </Link>
+        ) : null}
       </div>
     );
   }
@@ -104,6 +119,7 @@ export function TicketForm() {
                 type="radio"
                 name="clientType"
                 value={option}
+                defaultChecked={defaults?.clientType === option}
                 required
                 className="accent-[#12c8b0]"
               />
@@ -195,13 +211,20 @@ export function TicketForm() {
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Name" error={state.fieldErrors?.name}>
-          <input className={inputClass} name="name" autoComplete="name" required />
+          <input
+            className={inputClass}
+            name="name"
+            autoComplete="name"
+            defaultValue={defaults?.name}
+            required
+          />
         </Field>
         <Field label="Company" error={state.fieldErrors?.company}>
           <input
             className={inputClass}
             name="company"
             autoComplete="organization"
+            defaultValue={defaults?.company}
             required
           />
         </Field>
@@ -211,6 +234,8 @@ export function TicketForm() {
             name="email"
             type="email"
             autoComplete="email"
+            defaultValue={defaults?.email}
+            readOnly={Boolean(defaults?.email)}
             required
           />
         </Field>

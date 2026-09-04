@@ -83,6 +83,23 @@ export default async function AdminTicketDetailPage({
             ),
           },
           { label: "Description", value: ticket.description },
+          ...(ticket.clientFollowUp
+            ? [
+                {
+                  label: "Client follow-up",
+                  value: (
+                    <>
+                      {ticket.clientFollowUp}
+                      {ticket.clientFollowUpAt ? (
+                        <span className="mt-1 block text-xs text-white/45">
+                          {formatDateTime(ticket.clientFollowUpAt)}
+                        </span>
+                      ) : null}
+                    </>
+                  ),
+                },
+              ]
+            : []),
         ]}
       />
 

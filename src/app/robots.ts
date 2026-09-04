@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/admin/"],
+      disallow: ["/admin", "/admin/", "/account", "/account/", "/login", "/signup"],
     },
     sitemap: "https://techly.co.za/sitemap.xml",
   };

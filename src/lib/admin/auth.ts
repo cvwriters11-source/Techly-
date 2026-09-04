@@ -39,9 +39,26 @@ export function verifySessionToken(token: string | undefined | null) {
   }
 }
 
-export function passwordsMatch(input: string, expected: string) {
+function secretsMatch(input: string, expected: string) {
   const actualBuffer = Buffer.from(input);
   const expectedBuffer = Buffer.from(expected);
   if (actualBuffer.length !== expectedBuffer.length) return false;
   return timingSafeEqual(actualBuffer, expectedBuffer);
+}
+
+export function passwordsMatch(input: string, expected: string) {
+  return secretsMatch(input, expected);
+}
+
+export function emailsMatch(input: string, expected: string) {
+  return secretsMatch(input.trim().toLowerCase(), expected.trim().toLowerCase());
+}
+
+export function adminCredentialsMatch(email: string, password: string) {
+  const expectedEmail = process.env.ADMIN_EMAIL;
+  const expectedPassword = process.env.ADMIN_PASSWORD;
+  if (!expectedEmail || !expectedPassword) return false;
+  const emailOk = emailsMatch(email, expectedEmail);
+  const passwordOk = passwordsMatch(password, expectedPassword);
+  return emailOk && passwordOk;
 }

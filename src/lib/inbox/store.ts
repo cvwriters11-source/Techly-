@@ -24,6 +24,9 @@ export type TicketRecord = {
   urgency: string;
   contactMethod: string;
   description: string;
+  userId: string | null;
+  clientFollowUp: string;
+  clientFollowUpAt: string | null;
 };
 
 export type ContactRecord = {
@@ -56,6 +59,9 @@ type TicketRow = {
   urgency: string;
   contact_method: string;
   description: string;
+  user_id: string | null;
+  client_follow_up: string | null;
+  client_follow_up_at: string | null;
   invoice_number: string | null;
   invoice_description: string | null;
   invoice_amount: number | string | null;
@@ -138,6 +144,9 @@ function mapTicket(row: TicketRow): TicketRecord {
     urgency: row.urgency,
     contactMethod: row.contact_method,
     description: row.description,
+    userId: row.user_id,
+    clientFollowUp: row.client_follow_up ?? "",
+    clientFollowUpAt: row.client_follow_up_at,
   };
 }
 
@@ -166,8 +175,15 @@ function throwIfError(error: { message: string } | null) {
 export async function saveTicket(
   input: Omit<
     TicketRecord,
-    "id" | "createdAt" | "status" | "adminNote" | "invoice"
-  >,
+    | "id"
+    | "createdAt"
+    | "status"
+    | "adminNote"
+    | "invoice"
+    | "clientFollowUp"
+    | "clientFollowUpAt"
+    | "userId"
+  > & { userId?: string | null },
 ) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
@@ -185,6 +201,7 @@ export async function saveTicket(
       urgency: input.urgency,
       contact_method: input.contactMethod,
       description: input.description,
+      user_id: input.userId ?? null,
       ...invoiceColumns(),
     })
     .select()
@@ -304,4 +321,72 @@ export async function updateContact(
 
   throwIfError(error);
   return data ? mapContact(data as ContactRow) : null;
+}
+
+export async function listTicketsForClient(userId: string, email: string) {
+  const supabase = createAdminClient();
+  const [byUser, byEmail] = await Promise.all([
+    supabase
+      .from("tickets")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("tickets")
+      .select("*")
+      .ilike("email", email)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  throwIfError(byUser.error);
+  throwIfError(byEmail.error);
+
+  const rows = new Map<string, TicketRow>();
+  for (const row of [...(byUser.data as TicketRow[]), ...(byEmail.data as TicketRow[])]) {
+    rows.set(row.id, row);
+  }
+
+  return [...rows.values()]
+    .sort(
+      (left, right) =>
+        new Date(right.created_at).getTime() - new Date(left.created_at).getTime(),
+    )
+    .map(mapTicket);
+}
+
+export async function getClientTicket(
+  id: string,
+  userId: string,
+  email: string,
+) {
+  const ticket = await getTicket(id);
+  if (!ticket) return null;
+  const owns =
+    ticket.userId === userId ||
+    ticket.email.trim().toLowerCase() === email.trim().toLowerCase();
+  return owns ? ticket : null;
+}
+
+export async function addClientFollowUp(
+  id: string,
+  userId: string,
+  email: string,
+  message: string,
+) {
+  const ticket = await getClientTicket(id, userId, email);
+  if (!ticket) return null;
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("tickets")
+    .update({
+      client_follow_up: message,
+      client_follow_up_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+
+  throwIfError(error);
+  return data ? mapTicket(data as TicketRow) : null;
 }

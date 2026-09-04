@@ -30,7 +30,7 @@ export default async function ServiceCategoryPage({ params }: Props) {
 
   return (
     <>
-      <Section className="overflow-hidden pt-16 pb-8 sm:pt-16 sm:pb-8">
+      <Section className="overflow-hidden pt-2 pb-8 sm:pt-2 sm:pb-8">
         <div className="pointer-events-none absolute inset-0 bg-grid opacity-60" />
         <Container className="relative">
           <Reveal>

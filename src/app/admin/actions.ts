@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { passwordsMatch } from "@/lib/admin/auth";
+import { adminCredentialsMatch } from "@/lib/admin/auth";
 import {
   clearAdminSession,
   createAdminSession,
@@ -32,19 +32,22 @@ export async function loginAdmin(
   _prev: AdminLoginState,
   formData: FormData,
 ): Promise<AdminLoginState> {
+  const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
   const from = String(formData.get("from") ?? "/admin");
-  const expected = process.env.ADMIN_PASSWORD;
+  const expectedEmail = process.env.ADMIN_EMAIL;
+  const expectedPassword = process.env.ADMIN_PASSWORD;
 
-  if (!expected) {
+  if (!expectedEmail || !expectedPassword) {
     return {
       ok: false,
-      message: "ADMIN_PASSWORD is not set. Add it to .env.local and restart the server.",
+      message:
+        "Admin login is not configured. Add ADMIN_EMAIL and ADMIN_PASSWORD to .env.local and restart the server.",
     };
   }
 
-  if (!passwordsMatch(password, expected)) {
-    return { ok: false, message: "Incorrect password." };
+  if (!adminCredentialsMatch(email, password)) {
+    return { ok: false, message: "Incorrect email or password." };
   }
 
   await createAdminSession();

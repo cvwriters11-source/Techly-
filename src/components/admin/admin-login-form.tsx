@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
+import { PasswordField } from "@/components/ui/password-field";
 import { loginAdmin, type AdminLoginState } from "@/app/admin/actions";
 
 const initial: AdminLoginState = { ok: false, message: "" };
@@ -19,15 +20,21 @@ export function AdminLoginForm({ from }: { from: string }) {
       ) : null}
       <label className="block">
         <span className="mb-2 block text-sm font-medium text-white">
-          Admin password
+          Email
         </span>
         <input
           className="w-full rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white outline-none focus:border-accent/50 focus:ring-2 focus:ring-accent/20"
-          type="password"
-          name="password"
-          autoComplete="current-password"
+          type="email"
+          name="email"
+          autoComplete="username"
           required
         />
+      </label>
+      <label className="block">
+        <span className="mb-2 block text-sm font-medium text-white">
+          Password
+        </span>
+        <PasswordField autoComplete="current-password" />
       </label>
       <Button type="submit" variant="solid" disabled={pending} className="w-full">
         {pending ? "Signing in…" : "Sign in"}

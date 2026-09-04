@@ -6,7 +6,7 @@ export const site = {
   description:
     "Custom software development and business IT support for organisations across South Africa, with remote services nationwide and onsite assistance available in Gauteng.",
   heroTitle: "Software Development & IT Support",
-  email: "hello@techly.co.za",
+  email: "info@techlypc.co.za",
   phoneDisplay: "+27 00 000 0000",
   phoneTel: "+27000000000",
   whatsapp: "27000000000",

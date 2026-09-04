@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getClientUser } from "@/lib/client-auth";
 import { saveTicket } from "@/lib/inbox/store";
 import {
   allTicketProblems,
@@ -13,6 +14,7 @@ export type TicketState = {
   ok: boolean;
   message: string;
   fieldErrors?: Record<string, string>;
+  accountLink?: boolean;
 };
 
 function isIn<T extends readonly string[]>(
@@ -73,17 +75,21 @@ export async function submitTicket(
     };
   }
 
+  const client = await getClientUser();
+  const ticketEmail = client?.email ?? email;
+
   try {
     await saveTicket({
-      clientType,
-      name,
-      company,
-      email,
+      clientType: client ? "I am an existing client" : clientType,
+      name: client?.name || name,
+      company: client?.company || company,
+      email: ticketEmail,
       phone,
       problems,
       urgency,
       contactMethod,
       description,
+      userId: client?.id ?? null,
     });
   } catch {
     return {
@@ -93,10 +99,13 @@ export async function submitTicket(
   }
   revalidatePath("/admin");
   revalidatePath("/admin/tickets");
+  revalidatePath("/account");
 
   return {
     ok: true,
-    message:
-      "Ticket received. We will contact you shortly using your preferred method. New clients are welcome — no existing account is required.",
+    accountLink: Boolean(client),
+    message: client
+      ? "Ticket received. Track it and send a follow-up from My tickets."
+      : "Ticket received. We will contact you shortly using your preferred method. Create a client account to follow up later.",
   };
 }

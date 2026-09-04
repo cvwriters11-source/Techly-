@@ -17,7 +17,7 @@ export function emptyInvoice(): InvoiceDetails {
 }
 
 export function suggestedInvoiceNumber(recordId: string) {
-  return `INV-${recordId}`;
+  return `INV-TECHLYPC-${recordId}`;
 }
 
 export function parseZar(raw: string) {

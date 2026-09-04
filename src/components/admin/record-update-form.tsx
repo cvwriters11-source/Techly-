@@ -113,6 +113,7 @@ export function RecordUpdateForm({
             </span>
             <input
               name="invoiceNumber"
+              key={invoice.number || suggestedInvoiceNumber}
               defaultValue={invoice.number || suggestedInvoiceNumber}
               className={fieldClass}
             />
