@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { ContactForm } from "@/components/contact-form";
 import { Container, Section, SectionHeading } from "@/components/ui/section";
-import { site } from "@/lib/site";
+import { serviceOptions, site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -41,7 +41,14 @@ const details = [
   },
 ];
 
-export default function ContactPage() {
+export default async function ContactPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ service?: string }>;
+}) {
+  const { service } = await searchParams;
+  const defaultService = serviceOptions.find((option) => option === service);
+
   return (
     <Section className="pb-28 pt-16">
       <Container>
@@ -55,7 +62,7 @@ export default function ContactPage() {
           id="consult"
           className="mt-10 rounded-[1.8rem] border border-white/12 bg-[#0c0c0c] p-5 sm:p-8"
         >
-          <ContactForm />
+          <ContactForm defaultService={defaultService} />
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

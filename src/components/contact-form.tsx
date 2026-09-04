@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { useActionState, useEffect, useState } from "react";
+import { CheckCircle2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { submitContact, type ContactState } from "@/app/contact/actions";
+import { cn } from "@/lib/utils";
 import {
   budgetRanges,
   contactMethods,
@@ -75,7 +76,91 @@ function ChoiceGroup({
   );
 }
 
-export function ContactForm() {
+function FormDropdown({
+  label,
+  name,
+  options,
+  placeholder,
+  defaultValue = "",
+  startOpen = false,
+  error,
+}: {
+  label: string;
+  name: string;
+  options: readonly string[];
+  placeholder: string;
+  defaultValue?: string;
+  startOpen?: boolean;
+  error?: string;
+}) {
+  const [open, setOpen] = useState(startOpen);
+  const [value, setValue] = useState(defaultValue);
+
+  useEffect(() => {
+    if (startOpen) setOpen(true);
+  }, [startOpen]);
+
+  return (
+    <div>
+      <input type="hidden" name={name} value={value} />
+      <p className="mb-2 text-sm font-medium text-white">{label}</p>
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        className={cn(
+          inputClass,
+          "flex items-center justify-between text-left",
+          value ? "text-white" : "text-white/40",
+        )}
+      >
+        <span>{value || placeholder}</span>
+        <ChevronDown
+          className={cn("size-4 shrink-0 text-white/55 transition", open && "rotate-180")}
+        />
+      </button>
+      {open ? (
+        <ul
+          role="listbox"
+          aria-label={label}
+          className="mt-2 overflow-hidden rounded-2xl border border-white/15 bg-[#111]"
+        >
+          {options.map((option) => (
+            <li key={option}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={value === option}
+                onClick={() => {
+                  setValue(option);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "w-full px-3.5 py-2.5 text-left text-sm text-white transition hover:bg-white/5",
+                  value === option && "bg-accent/10 text-accent",
+                )}
+              >
+                {option}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {error ? (
+        <p className="mt-2 text-xs text-red-300" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export function ContactForm({
+  defaultService,
+}: {
+  defaultService?: string;
+}) {
   const [state, action, pending] = useActionState(submitContact, initial);
 
   if (state.ok) {
@@ -100,17 +185,21 @@ export function ContactForm() {
         </p>
       ) : null}
 
-      <ChoiceGroup
-        legend="What do you need help with?"
+      <FormDropdown
+        label="What do you need help with?"
         name="service"
         options={serviceOptions}
+        placeholder="Select a service"
+        defaultValue={defaultService}
+        startOpen={Boolean(defaultService)}
         error={state.fieldErrors?.service}
       />
 
-      <ChoiceGroup
-        legend="Budget range"
+      <FormDropdown
+        label="Budget range"
         name="budget"
         options={budgetRanges}
+        placeholder="Select a budget range"
         error={state.fieldErrors?.budget}
       />
 

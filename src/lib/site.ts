@@ -336,6 +336,10 @@ export const serviceOptions = [
   "Not sure — I need advice",
 ] as const;
 
+export function contactServiceHref(service: string) {
+  return `/contact?service=${encodeURIComponent(service)}#consult`;
+}
+
 export const ticketClientTypes = [
   "I am a new client",
   "I am an existing client",

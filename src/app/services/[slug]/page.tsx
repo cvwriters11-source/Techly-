@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Reveal } from "@/components/reveal";
 import { Button } from "@/components/ui/button";
 import { Container, Section, SectionHeading } from "@/components/ui/section";
-import { serviceCategories } from "@/lib/site";
+import { contactServiceHref, serviceCategories } from "@/lib/site";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -72,7 +72,7 @@ export default async function ServiceCategoryPage({ params }: Props) {
               practical next step — build, support, automate, or a mix of all three.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button href="/contact">Get Started</Button>
+              <Button href={contactServiceHref(category.title)}>Get Started</Button>
               <Button href="/services">
                 All services
               </Button>
