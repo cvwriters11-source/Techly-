@@ -14,8 +14,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AdminTicketsPage() {
+export default async function AdminTicketsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ resolved?: string; email?: string }>;
+}) {
+  const { resolved, email } = await searchParams;
   const { tickets } = await listInbox();
+  const openTickets = tickets.filter((ticket) => ticket.status !== "resolved");
 
   return (
     <div className="space-y-6">
@@ -25,17 +31,37 @@ export default async function AdminTicketsPage() {
         </p>
         <h1 className="mt-2 text-3xl font-semibold text-white">Tickets</h1>
         <p className="mt-2 text-sm text-white/60">
-          Full details from every ticket submitted on the site.
+          Open tickets from the site. Resolved tickets leave this list after
+          the client is emailed.
         </p>
       </div>
 
-      {tickets.length === 0 ? (
+      {resolved === "1" ? (
+        <p
+          role="status"
+          className={
+            email === "failed" || email === "missing"
+              ? "rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100"
+              : "rounded-xl border border-accent/25 bg-accent/10 px-4 py-3 text-sm text-accent"
+          }
+        >
+          {email === "missing"
+            ? "Ticket marked as resolved and removed from this list, but this client has no email address."
+            : email === "failed"
+              ? "Ticket marked as resolved and removed from this list, but the client email could not be sent. Add RESEND_API_KEY or SMTP details on the server."
+              : "Ticket marked as resolved and emailed to the client."}
+        </p>
+      ) : null}
+
+      {openTickets.length === 0 ? (
         <p className="rounded-[1.4rem] border border-white/12 bg-[#0c0c0c] p-8 text-sm text-white/55">
-          No tickets yet.
+          {tickets.length === 0
+            ? "No tickets yet."
+            : "No open tickets. Resolved work has been emailed to the client and removed from this list."}
         </p>
       ) : (
         <div className="overflow-hidden rounded-[1.4rem] border border-white/12 bg-[#0c0c0c]">
-          {tickets.map((ticket) => (
+          {openTickets.map((ticket) => (
             <Link
               key={ticket.id}
               href={`/admin/tickets/${ticket.id}`}

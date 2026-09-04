@@ -99,7 +99,15 @@ export async function saveTicketUpdate(
     return { ok: false, message: "This ticket could not be updated." };
   }
 
+  if (status === "resolved") {
+    revalidatePath("/account");
+    revalidatePath(`/account/${id}`);
+  }
+
   if (!ticket.email) {
+    if (status === "resolved") {
+      redirect("/admin/tickets?resolved=1&email=missing");
+    }
     return {
       ok: false,
       message: "Ticket updated, but this client has no email address.",
@@ -113,7 +121,11 @@ export async function saveTicketUpdate(
     recordId: ticket.id,
     recordLabel: "support ticket",
     statusLabel: ticketStatusLabel(ticket.status),
-    note: ticket.adminNote,
+    note:
+      ticket.adminNote ||
+      (status === "resolved"
+        ? "Your ticket has been marked as resolved. If you still need help, reply to this email."
+        : ""),
     invoice: parsedInvoice.include ? parsedInvoice.invoice : null,
   });
 
@@ -125,6 +137,14 @@ export async function saveTicketUpdate(
       },
     });
     revalidatePath(`/admin/tickets/${id}`);
+  }
+
+  if (status === "resolved") {
+    redirect(
+      emailed.ok
+        ? "/admin/tickets?resolved=1"
+        : "/admin/tickets?resolved=1&email=failed",
+    );
   }
 
   if (!emailed.ok) {

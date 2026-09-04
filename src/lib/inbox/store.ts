@@ -257,6 +257,28 @@ export async function listInbox() {
   };
 }
 
+export async function countNewInbox() {
+  const supabase = createAdminClient();
+  const [tickets, contacts] = await Promise.all([
+    supabase
+      .from("tickets")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "new"),
+    supabase
+      .from("contacts")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "new"),
+  ]);
+
+  throwIfError(tickets.error);
+  throwIfError(contacts.error);
+
+  return {
+    tickets: tickets.count ?? 0,
+    contacts: contacts.count ?? 0,
+  };
+}
+
 export async function getTicket(id: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase

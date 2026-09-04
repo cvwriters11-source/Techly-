@@ -9,13 +9,32 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/admin", label: "Overview" },
-  { href: "/admin/tickets", label: "Tickets" },
-  { href: "/admin/contacts", label: "Contact us" },
+  { href: "/admin/tickets", label: "Tickets", countKey: "tickets" as const },
+  { href: "/admin/contacts", label: "Contact us", countKey: "contacts" as const },
   { href: "/admin/projects", label: "Projects" },
 ];
 
-export function AdminNav() {
+function InboxBadge({ count, label }: { count: number; label: string }) {
+  if (count < 1) return null;
+  return (
+    <span
+      className="min-w-5 rounded-full bg-accent px-1.5 text-[11px] font-semibold leading-5 text-black"
+      aria-label={`${count} new ${label}`}
+    >
+      {count > 9 ? "9+" : count}
+    </span>
+  );
+}
+
+export function AdminNav({
+  newTickets = 0,
+  newContacts = 0,
+}: {
+  newTickets?: number;
+  newContacts?: number;
+}) {
   const pathname = usePathname();
+  const counts = { tickets: newTickets, contacts: newContacts };
 
   return (
     <header className="border-b border-white/10 bg-black/80 backdrop-blur-xl">
@@ -30,16 +49,18 @@ export function AdminNav() {
                 link.href === "/admin"
                   ? pathname === "/admin"
                   : pathname.startsWith(link.href);
+              const count = link.countKey ? counts[link.countKey] : 0;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "text-sm font-medium transition",
+                    "inline-flex items-center gap-1.5 text-sm font-medium transition",
                     active ? "text-accent" : "text-white/70 hover:text-white",
                   )}
                 >
                   {link.label}
+                  <InboxBadge count={count} label={link.label} />
                 </Link>
               );
             })}
@@ -69,16 +90,18 @@ export function AdminNav() {
             link.href === "/admin"
               ? pathname === "/admin"
               : pathname.startsWith(link.href);
+          const count = link.countKey ? counts[link.countKey] : 0;
           return (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
-                "rounded-full px-3 py-1.5 text-sm",
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm",
                 active ? "bg-accent/15 text-accent" : "text-white/70",
               )}
             >
               {link.label}
+              <InboxBadge count={count} label={link.label} />
             </Link>
           );
         })}

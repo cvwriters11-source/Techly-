@@ -40,12 +40,29 @@ export function isEmailConfigured() {
   return Boolean(env("RESEND_API_KEY") || env("SMTP_HOST"));
 }
 
-async function sendWithResend(input: {
+function adminInboxTo() {
+  return env("ADMIN_NOTIFY_EMAIL") || env("ADMIN_EMAIL");
+}
+
+function adminBaseUrl() {
+  const explicit = env("NEXT_PUBLIC_SITE_URL").replace(/\/$/, "");
+  if (explicit) return explicit;
+  const production = env("VERCEL_PROJECT_PRODUCTION_URL");
+  if (production) return `https://${production}`;
+  const preview = env("VERCEL_URL");
+  if (preview) return `https://${preview}`;
+  return "https://techlypc.co.za";
+}
+
+type MailPayload = {
   to: string;
   subject: string;
   text: string;
   html: string;
-}): Promise<SendEmailResult> {
+  replyTo?: string;
+};
+
+async function sendWithResend(input: MailPayload): Promise<SendEmailResult> {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -55,7 +72,7 @@ async function sendWithResend(input: {
     body: JSON.stringify({
       from: fromAddress(),
       to: [input.to],
-      reply_to: site.email,
+      reply_to: input.replyTo || site.email,
       subject: input.subject,
       text: input.text,
       html: input.html,
@@ -73,12 +90,7 @@ async function sendWithResend(input: {
   return { ok: true };
 }
 
-async function sendWithSmtp(input: {
-  to: string;
-  subject: string;
-  text: string;
-  html: string;
-}): Promise<SendEmailResult> {
+async function sendWithSmtp(input: MailPayload): Promise<SendEmailResult> {
   const port = Number(env("SMTP_PORT") || "587");
   const transporter = nodemailer.createTransport({
     host: env("SMTP_HOST"),
@@ -93,7 +105,7 @@ async function sendWithSmtp(input: {
   await transporter.sendMail({
     from: fromAddress(),
     to: input.to,
-    replyTo: site.email,
+    replyTo: input.replyTo || site.email,
     subject: input.subject,
     text: input.text,
     html: input.html,
@@ -102,12 +114,7 @@ async function sendWithSmtp(input: {
   return { ok: true };
 }
 
-export async function sendEmail(input: {
-  to: string;
-  subject: string;
-  text: string;
-  html: string;
-}): Promise<SendEmailResult> {
+export async function sendEmail(input: MailPayload): Promise<SendEmailResult> {
   try {
     if (env("RESEND_API_KEY")) {
       return await sendWithResend(input);
@@ -175,20 +182,27 @@ function invoiceBlock(invoice: InvoiceDetails) {
 
 export async function sendClientUpdateEmail(input: ClientUpdateEmail) {
   const note = input.note.trim();
+  const resolved = input.statusLabel === "Resolved";
   const invoice =
     input.invoice &&
     input.invoice.description.trim() &&
     input.invoice.amount !== null
       ? input.invoice
       : null;
+  const intro = resolved
+    ? `We've marked your Techly ${input.recordLabel} as resolved.`
+    : `We've updated your Techly ${input.recordLabel}.`;
+  const heading = invoice ? "Invoice" : resolved ? "Resolved" : "Update";
   const subject = invoice
     ? `Techly invoice ${invoice.number}`
-    : `Techly ${input.recordLabel} update: ${input.statusLabel}`;
+    : resolved
+      ? `Your Techly ${input.recordLabel} has been resolved`
+      : `Techly ${input.recordLabel} update: ${input.statusLabel}`;
 
   const text = [
     `Hi ${input.name},`,
     "",
-    `We've updated your Techly ${input.recordLabel}.`,
+    intro,
     "",
     `Reference: ${input.recordId}`,
     `Status: ${input.statusLabel}`,
@@ -223,15 +237,13 @@ export async function sendClientUpdateEmail(input: ClientUpdateEmail) {
               <td style="padding:28px 28px 8px;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#12c8b0;">Techly</td>
             </tr>
             <tr>
-              <td style="padding:0 28px 12px;font-size:22px;font-weight:700;color:#ffffff;">${
-                invoice ? "Invoice" : "Update"
-              }</td>
+              <td style="padding:0 28px 12px;font-size:22px;font-weight:700;color:#ffffff;">${escapeHtml(heading)}</td>
             </tr>
             <tr>
               <td style="padding:0 28px 20px;font-size:15px;line-height:1.6;color:#d6d6d6;">
                 Hi ${escapeHtml(input.name)},<br /><br />
-                We've updated your ${escapeHtml(input.recordLabel)}
-                <strong style="color:#ffffff;">${escapeHtml(input.recordId)}</strong>
+                ${escapeHtml(intro)}<br /><br />
+                Reference <strong style="color:#ffffff;">${escapeHtml(input.recordId)}</strong>
                 ${input.company ? ` for ${escapeHtml(input.company)}` : ""}.
               </td>
             </tr>
@@ -276,5 +288,107 @@ export async function sendClientUpdateEmail(input: ClientUpdateEmail) {
     subject,
     text,
     html,
+  });
+}
+
+export type AdminInboxAlert = {
+  kind: "ticket" | "contact" | "follow_up";
+  recordId: string;
+  name: string;
+  company: string;
+  email: string;
+  phone: string;
+  summary: string;
+  details: string;
+  urgency?: string;
+};
+
+export async function notifyAdminInbox(alert: AdminInboxAlert) {
+  const to = adminInboxTo();
+  if (!to) {
+    return { ok: false as const, error: "ADMIN_EMAIL is not set." };
+  }
+
+  const titles = {
+    ticket: "New support ticket",
+    contact: "New Contact us request",
+    follow_up: "Client follow-up on a ticket",
+  } as const;
+  const title = titles[alert.kind];
+  const path =
+    alert.kind === "contact"
+      ? `/admin/contacts/${alert.recordId}`
+      : `/admin/tickets/${alert.recordId}`;
+  const href = `${adminBaseUrl()}${path}`;
+
+  const text = [
+    title,
+    "",
+    `${alert.name}${alert.company ? ` · ${alert.company}` : ""}`,
+    `Email: ${alert.email}`,
+    `Phone: ${alert.phone}`,
+    ...(alert.urgency ? [`Urgency: ${alert.urgency}`] : []),
+    `Reference: ${alert.recordId}`,
+    "",
+    alert.summary,
+    "",
+    alert.details,
+    "",
+    `Open in admin: ${href}`,
+  ].join("\n");
+
+  const html = `<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background:#050505;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#050505;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#111111;border:1px solid #2a2a2a;border-radius:16px;">
+            <tr>
+              <td style="padding:28px 28px 8px;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#12c8b0;">Techly Admin</td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 12px;font-size:22px;font-weight:700;color:#ffffff;">${escapeHtml(title)}</td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 20px;font-size:15px;line-height:1.6;color:#d6d6d6;">
+                ${escapeHtml(alert.name)}${alert.company ? ` · ${escapeHtml(alert.company)}` : ""}<br />
+                ${escapeHtml(alert.email)} · ${escapeHtml(alert.phone)}
+                ${alert.urgency ? `<br />Urgency: ${escapeHtml(alert.urgency)}` : ""}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 20px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;border:1px solid #2a2a2a;border-radius:12px;">
+                  <tr>
+                    <td style="padding:14px 16px 6px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;">${escapeHtml(alert.recordId)}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0 16px 10px;font-size:16px;font-weight:700;color:#ffffff;">${escapeHtml(alert.summary)}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0 16px 16px;font-size:15px;line-height:1.6;color:#d6d6d6;">${noteToHtml(alert.details)}</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 28px;">
+                <a href="${escapeHtml(href)}" style="display:inline-block;background:#12c8b0;color:#050505;text-decoration:none;font-weight:700;font-size:14px;padding:12px 18px;border-radius:999px;">Open in admin</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
+  return sendEmail({
+    to,
+    subject: `Techly: ${title} — ${alert.name}`,
+    text,
+    html,
+    replyTo: alert.email,
   });
 }

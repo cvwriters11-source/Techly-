@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { notifyAdminInbox } from "@/lib/email";
 import { saveContact } from "@/lib/inbox/store";
 import {
   budgetRanges,
@@ -64,7 +65,7 @@ export async function submitContact(
   }
 
   try {
-    await saveContact({
+    const contact = await saveContact({
       name,
       company,
       email,
@@ -74,6 +75,20 @@ export async function submitContact(
       budget,
       contactMethod,
     });
+    try {
+      await notifyAdminInbox({
+        kind: "contact",
+        recordId: contact.id,
+        name: contact.name,
+        company: contact.company,
+        email: contact.email,
+        phone: contact.phone,
+        summary: contact.service,
+        details: contact.description,
+      });
+    } catch {
+      // The request is saved even if the admin email cannot be sent.
+    }
   } catch {
     return {
       ok: false,

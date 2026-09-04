@@ -137,9 +137,27 @@ export async function submitClientFollowUp(
     return { ok: false, message: "This ticket could not be updated." };
   }
 
+  const { notifyAdminInbox } = await import("@/lib/email");
+  try {
+    await notifyAdminInbox({
+      kind: "follow_up",
+      recordId: ticket.id,
+      name: ticket.name,
+      company: ticket.company,
+      email: ticket.email,
+      phone: ticket.phone,
+      summary: "New follow-up from the client",
+      details: message,
+      urgency: ticket.urgency,
+    });
+  } catch {
+    // Follow-up is saved even if the admin email cannot be sent.
+  }
+
   revalidatePath("/account");
   revalidatePath(`/account/${ticketId}`);
   revalidatePath("/admin");
+  revalidatePath("/admin/tickets");
   revalidatePath(`/admin/tickets/${ticketId}`);
 
   return { ok: true, message: "Follow-up sent. We will pick this up shortly." };

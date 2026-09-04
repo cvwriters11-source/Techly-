@@ -82,13 +82,15 @@ export default async function AdminDashboardPage() {
               View all
             </Link>
           </div>
-          {tickets.length === 0 ? (
+          {openTickets.length === 0 ? (
             <p className="text-sm text-white/50">
-              No tickets yet. New Log a Ticket submissions will appear here.
+              {tickets.length === 0
+                ? "No tickets yet. New Log a Ticket submissions will appear here."
+                : "No open tickets. Resolved tickets are emailed to the client and leave this list."}
             </p>
           ) : (
             <ul className="space-y-3">
-              {tickets.slice(0, 6).map((ticket) => (
+              {openTickets.slice(0, 6).map((ticket) => (
                 <li key={ticket.id}>
                   <Link
                     href={`/admin/tickets/${ticket.id}`}

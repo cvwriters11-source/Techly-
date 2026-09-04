@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getClientUser } from "@/lib/client-auth";
+import { notifyAdminInbox } from "@/lib/email";
 import { saveTicket } from "@/lib/inbox/store";
 import {
   allTicketProblems,
@@ -79,7 +80,7 @@ export async function submitTicket(
   const ticketEmail = client?.email ?? email;
 
   try {
-    await saveTicket({
+    const ticket = await saveTicket({
       clientType: client ? "I am an existing client" : clientType,
       name: client?.name || name,
       company: client?.company || company,
@@ -91,6 +92,21 @@ export async function submitTicket(
       description,
       userId: client?.id ?? null,
     });
+    try {
+      await notifyAdminInbox({
+        kind: "ticket",
+        recordId: ticket.id,
+        name: ticket.name,
+        company: ticket.company,
+        email: ticket.email,
+        phone: ticket.phone,
+        summary: ticket.problems[0] || "New support ticket",
+        details: ticket.description,
+        urgency: ticket.urgency,
+      });
+    } catch {
+      // The ticket is saved even if the admin email cannot be sent.
+    }
   } catch {
     return {
       ok: false,
