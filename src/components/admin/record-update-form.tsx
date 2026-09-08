@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,83 @@ const fieldClass =
 
 function emptyLine(): InvoiceLine {
   return { description: "", quantity: 1, unitPrice: 0 };
+}
+
+function EmailSentPopup({
+  open,
+  message,
+  invoiceNumber,
+  onClose,
+}: {
+  open: boolean;
+  message: string;
+  invoiceNumber?: string;
+  onClose: () => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
+  if (!mounted || !open) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="email-sent-title"
+      onClick={onClose}
+    >
+      <div
+        className="flex h-[min(680px,92dvh)] w-full max-w-[390px] flex-col rounded-[2.4rem] border border-accent/50 bg-[#111] px-6 py-8 text-center shadow-[0_0_80px_rgba(18,200,176,0.18)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
+          Sent
+        </p>
+        <div className="flex flex-1 flex-col items-center justify-center">
+          <h2
+            id="email-sent-title"
+            className="text-5xl font-semibold leading-tight text-white"
+          >
+            Email sent
+          </h2>
+          <p className="mt-6 text-lg leading-relaxed text-white/80">{message}</p>
+          {invoiceNumber ? (
+            <p className="mt-5 text-sm text-white/55">
+              Find it later in Invoice file with{" "}
+              <span className="font-medium text-white">{invoiceNumber}</span>.
+            </p>
+          ) : null}
+        </div>
+        <div className="flex flex-col gap-3">
+          {invoiceNumber ? (
+            <Link
+              href={`/admin/invoices?q=${encodeURIComponent(invoiceNumber)}`}
+              className="inline-flex items-center justify-center rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-white hover:border-white/40"
+            >
+              Open invoice file
+            </Link>
+          ) : null}
+          <Button type="button" variant="solid" className="w-full py-3" onClick={onClose}>
+            OK
+          </Button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
 }
 
 export function RecordUpdateForm({
@@ -74,7 +152,7 @@ export function RecordUpdateForm({
   );
 
   useEffect(() => {
-    if (state.ok && state.emailed) setPopupOpen(true);
+    if (state.ok && state.message) setPopupOpen(true);
   }, [state]);
 
   function closePopup() {
@@ -97,15 +175,11 @@ export function RecordUpdateForm({
     >
       <input type="hidden" name="recordId" value={id} />
       <input type="hidden" name="clientName" value={clientName} />
-      {state.message && !state.emailed ? (
+      {state.message && !state.ok ? (
         <p
           role="status"
           aria-live="polite"
-          className={
-            state.ok
-              ? "rounded-xl border border-accent/25 bg-accent/10 px-4 py-3 text-sm text-accent"
-              : "rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100"
-          }
+          className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100"
         >
           {state.message}
         </p>
@@ -349,52 +423,12 @@ export function RecordUpdateForm({
         {pending ? "Emailing client…" : "Save and email client"}
       </Button>
 
-      {popupOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-5"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="email-sent-title"
-          onClick={closePopup}
-        >
-          <div
-            className="w-full max-w-lg rounded-[1.8rem] border border-accent/40 bg-[#111] px-6 py-10 text-center shadow-2xl sm:px-10"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
-              Sent
-            </p>
-            <h2
-              id="email-sent-title"
-              className="mt-4 text-4xl font-semibold text-white sm:text-5xl"
-            >
-              Email sent
-            </h2>
-            <p className="mt-5 text-base leading-relaxed text-white/75">
-              {state.message}
-            </p>
-            {state.invoiceNumber ? (
-              <p className="mt-4 text-sm text-white/55">
-                Find it later in Invoice file with{" "}
-                <span className="font-medium text-white">{state.invoiceNumber}</span>.
-              </p>
-            ) : null}
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-              {state.invoiceNumber ? (
-                <Link
-                  href={`/admin/invoices?q=${encodeURIComponent(state.invoiceNumber)}`}
-                  className="inline-flex items-center justify-center rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white hover:border-white/40"
-                >
-                  Open invoice file
-                </Link>
-              ) : null}
-              <Button type="button" variant="solid" onClick={closePopup}>
-                OK
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <EmailSentPopup
+        open={popupOpen}
+        message={state.message}
+        invoiceNumber={state.invoiceNumber}
+        onClose={closePopup}
+      />
     </form>
   );
 }
