@@ -16,6 +16,7 @@ import {
 import { invoiceFromForm, suggestedInvoiceNumber } from "@/lib/inbox/invoice";
 import {
   contactStatuses,
+  deleteContact,
   ticketStatuses,
   updateContact,
   updateTicket,
@@ -257,4 +258,18 @@ export async function saveContactUpdate(
       ? `The invoice ${parsedInvoice.invoice.number} was emailed to ${contact.email} and saved in the invoice file.`
       : `Update emailed to ${contact.email}.`,
   };
+}
+
+export async function deleteContactAction(formData: FormData) {
+  await requireAdmin();
+  const id = recordId(formData);
+  if (!id) {
+    redirect("/admin/contacts");
+  }
+
+  await deleteContact(id);
+  revalidatePath("/admin");
+  revalidatePath("/admin/contacts");
+  revalidatePath("/admin/invoices");
+  redirect("/admin/contacts?deleted=1");
 }

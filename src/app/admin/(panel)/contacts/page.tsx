@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { deleteContactAction } from "@/app/admin/actions";
 import { StatusBadge } from "@/components/admin/detail-list";
+import { ConfirmDeleteForm } from "@/components/admin/confirm-delete-form";
 import {
   contactStatusLabel,
   formatDateTime,
@@ -17,9 +19,9 @@ export const metadata: Metadata = {
 export default async function AdminContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ closed?: string; email?: string }>;
+  searchParams: Promise<{ closed?: string; email?: string; deleted?: string }>;
 }) {
-  const { closed, email } = await searchParams;
+  const { closed, email, deleted } = await searchParams;
   const { contacts } = await listInbox();
   const openContacts = contacts.filter((contact) => contact.status !== "closed");
 
@@ -34,9 +36,19 @@ export default async function AdminContactsPage({
         </h1>
         <p className="mt-2 text-sm text-white/60">
           Open Contact us submissions. Closed requests leave this list after
-          the client is emailed.
+          the client is emailed. Delete a request if it is a test or not
+          needed — the client is not emailed.
         </p>
       </div>
+
+      {deleted === "1" ? (
+        <p
+          role="status"
+          className="rounded-xl border border-accent/25 bg-accent/10 px-4 py-3 text-sm text-accent"
+        >
+          Request deleted.
+        </p>
+      ) : null}
 
       {closed === "1" ? (
         <p
@@ -64,12 +76,14 @@ export default async function AdminContactsPage({
       ) : (
         <div className="overflow-hidden rounded-[1.4rem] border border-white/12 bg-[#0c0c0c]">
           {openContacts.map((contact) => (
-            <Link
+            <div
               key={contact.id}
-              href={`/admin/contacts/${contact.id}`}
-              className="block border-b border-white/8 px-4 py-4 last:border-b-0 transition hover:bg-white/[0.03]"
+              className="flex items-stretch border-b border-white/8 last:border-b-0 transition hover:bg-white/[0.03]"
             >
-              <div className="flex min-w-0 items-start justify-between gap-3">
+              <Link
+                href={`/admin/contacts/${contact.id}`}
+                className="min-w-0 flex-1 px-4 py-4"
+              >
                 <div className="min-w-0">
                   <p className="font-medium break-words text-white">
                     {contact.name}
@@ -79,24 +93,33 @@ export default async function AdminContactsPage({
                     {contact.company ? ` · ${contact.company}` : ""}
                   </p>
                 </div>
+                <p className="mt-3 text-sm leading-snug break-words text-white/75">
+                  {contact.service}
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <StatusBadge
+                    label={contact.budget}
+                    className="border-white/12 bg-white/5 text-white/80"
+                  />
+                  <span className="text-xs text-white/45">
+                    {formatDateTime(contact.createdAt)}
+                  </span>
+                </div>
+              </Link>
+              <div className="flex shrink-0 flex-col items-end gap-3 px-3 py-4">
                 <StatusBadge
                   label={contactStatusLabel(contact.status)}
                   className={statusTone(contact.status)}
                 />
-              </div>
-              <p className="mt-3 text-sm leading-snug break-words text-white/75">
-                {contact.service}
-              </p>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <StatusBadge
-                  label={contact.budget}
-                  className="border-white/12 bg-white/5 text-white/80"
+                <ConfirmDeleteForm
+                  action={deleteContactAction}
+                  recordId={contact.id}
+                  label="Delete"
+                  ariaLabel={`Delete ${contact.name}'s request`}
+                  confirmMessage={`Delete ${contact.name}'s request? This cannot be undone, and the client will not be emailed.`}
                 />
-                <span className="text-xs text-white/45">
-                  {formatDateTime(contact.createdAt)}
-                </span>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

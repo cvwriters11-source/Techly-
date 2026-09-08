@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { saveContactUpdate } from "@/app/admin/actions";
+import { deleteContactAction, saveContactUpdate } from "@/app/admin/actions";
+import { ConfirmDeleteForm } from "@/components/admin/confirm-delete-form";
 import { DetailList, StatusBadge } from "@/components/admin/detail-list";
 import { RecordUpdateForm } from "@/components/admin/record-update-form";
 import {
@@ -89,6 +90,15 @@ export default async function AdminContactDetailPage({
           { value: "contacted", label: "Contacted" },
           { value: "closed", label: "Closed" },
         ]}
+      />
+
+      <ConfirmDeleteForm
+        action={deleteContactAction}
+        recordId={contact.id}
+        label="Delete request"
+        confirmMessage={`Delete ${contact.name}'s request? This cannot be undone, and the client will not be emailed.`}
+        description="Remove this request from Contact us. Use this for tests or submissions that are not needed. The client is not emailed."
+        className="rounded-[1.4rem] border border-white/12 bg-[#111] p-5"
       />
     </div>
   );

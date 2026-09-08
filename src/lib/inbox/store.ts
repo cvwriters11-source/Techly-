@@ -477,6 +477,15 @@ export async function updateContact(
   return data ? mapContact(data as ContactRow) : null;
 }
 
+export async function deleteContact(id: string) {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("contacts")
+    .delete()
+    .eq("id", recordId(id));
+  throwIfError(error);
+}
+
 export async function listTicketsForClient(userId: string, email: string) {
   const supabase = createAdminClient();
   const [byUser, byEmail] = await Promise.all([
