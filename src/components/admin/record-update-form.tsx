@@ -1,15 +1,26 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { RecordUpdateState } from "@/app/admin/actions";
-import { formatDateTime } from "@/lib/inbox/format";
-import type { InvoiceDetails } from "@/lib/inbox/invoice";
+import { formatDateTime, formatZar } from "@/lib/inbox/format";
+import {
+  invoicePaymentDetails,
+  invoiceTerms,
+  invoiceTotals,
+  type InvoiceDetails,
+  type InvoiceLine,
+} from "@/lib/inbox/invoice";
+import { site } from "@/lib/site";
 
 const initial: RecordUpdateState = { ok: false, message: "" };
 
 const fieldClass =
   "w-full rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-white/35 focus:border-accent/50";
+
+function emptyLine(): InvoiceLine {
+  return { description: "", quantity: 1, unitPrice: 0 };
+}
 
 export function RecordUpdateForm({
   action,
@@ -21,6 +32,7 @@ export function RecordUpdateForm({
   suggestedInvoiceNumber,
   notifyEmail,
   emailConfigured = true,
+  clientName = "",
 }: {
   action: (
     prev: RecordUpdateState,
@@ -34,12 +46,36 @@ export function RecordUpdateForm({
   suggestedInvoiceNumber: string;
   notifyEmail?: string;
   emailConfigured?: boolean;
+  clientName?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, initial);
-  const amountValue =
-    invoice.amount === null || invoice.amount === undefined
-      ? ""
-      : String(invoice.amount);
+  const [items, setItems] = useState<InvoiceLine[]>(
+    invoice.items.length > 0 ? invoice.items : [emptyLine()],
+  );
+  const [calloutFee, setCalloutFee] = useState(
+    invoice.calloutFee ? String(invoice.calloutFee) : "",
+  );
+  const [depositPercent, setDepositPercent] = useState(
+    String(invoice.depositPercent || 50),
+  );
+
+  const totals = useMemo(
+    () =>
+      invoiceTotals({
+        items: items.filter((line) => line.description.trim()),
+        calloutFee: Number(calloutFee) || 0,
+        depositPercent: Number(depositPercent) || 50,
+      }),
+    [items, calloutFee, depositPercent],
+  );
+
+  function updateLine(index: number, patch: Partial<InvoiceLine>) {
+    setItems((current) =>
+      current.map((line, lineIndex) =>
+        lineIndex === index ? { ...line, ...patch } : line,
+      ),
+    );
+  }
 
   return (
     <form
@@ -47,6 +83,7 @@ export function RecordUpdateForm({
       className="space-y-4 rounded-[1.4rem] border border-white/12 bg-[#111] p-5"
     >
       <input type="hidden" name="recordId" value={id} />
+      <input type="hidden" name="clientName" value={clientName} />
       {state.message ? (
         <p
           role="status"
@@ -107,58 +144,186 @@ export function RecordUpdateForm({
             Invoice
           </p>
           <p className="mt-1 text-xs text-white/45">
-            Fill this in to email a Techly PC PDF invoice with the update. Leave
-            it blank to send only the status and note.
+            Add items with quantity and unit price. The total, deposit and
+            balance are calculated for the PDF invoice.
           </p>
         </div>
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium text-white">
+            Invoice number
+          </span>
+          <input
+            name="invoiceNumber"
+            key={invoice.number || suggestedInvoiceNumber}
+            defaultValue={invoice.number || suggestedInvoiceNumber}
+            className={fieldClass}
+          />
+        </label>
+
+        <div className="space-y-3">
+          {items.map((line, index) => (
+            <div
+              key={index}
+              className="grid gap-2 rounded-2xl border border-white/10 p-3 sm:grid-cols-[1fr_5.5rem_7rem_6rem_auto]"
+            >
+              <label className="block sm:col-span-1">
+                <span className="mb-1 block text-xs text-white/55">Item</span>
+                <input
+                  name="itemDescription"
+                  value={line.description}
+                  onChange={(event) =>
+                    updateLine(index, { description: event.target.value })
+                  }
+                  placeholder="Work or product"
+                  className={fieldClass}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-white/55">Qty</span>
+                <input
+                  name="itemQty"
+                  value={line.quantity}
+                  onChange={(event) =>
+                    updateLine(index, {
+                      quantity: Number(event.target.value) || 0,
+                    })
+                  }
+                  inputMode="numeric"
+                  className={fieldClass}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-white/55">
+                  Unit price
+                </span>
+                <input
+                  name="itemUnit"
+                  value={line.unitPrice || ""}
+                  onChange={(event) =>
+                    updateLine(index, {
+                      unitPrice: Number(event.target.value) || 0,
+                    })
+                  }
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  className={fieldClass}
+                />
+              </label>
+              <div>
+                <span className="mb-1 block text-xs text-white/55">Line total</span>
+                <p className="rounded-xl border border-white/10 px-3 py-2.5 text-sm text-accent">
+                  {formatZar(line.quantity * line.unitPrice)}
+                </p>
+              </div>
+              {items.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setItems((current) =>
+                      current.filter((_, lineIndex) => lineIndex !== index),
+                    )
+                  }
+                  className="self-end text-xs text-white/45 hover:text-white"
+                >
+                  Remove
+                </button>
+              ) : (
+                <span className="hidden sm:block" />
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => setItems((current) => [...current, emptyLine()])}
+            className="text-sm font-medium text-accent hover:text-white"
+          >
+            Add another item
+          </button>
+        </div>
+
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-white">
-              Invoice number
+              Call-out fee (R)
             </span>
             <input
-              name="invoiceNumber"
-              key={invoice.number || suggestedInvoiceNumber}
-              defaultValue={invoice.number || suggestedInvoiceNumber}
-              className={fieldClass}
-            />
-          </label>
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium text-white">
-              Amount (R)
-            </span>
-            <input
-              name="invoiceAmount"
-              defaultValue={amountValue}
+              name="invoiceCalloutFee"
+              value={calloutFee}
+              onChange={(event) => setCalloutFee(event.target.value)}
               inputMode="decimal"
               placeholder="0.00"
               className={fieldClass}
             />
+            <span className="mt-1.5 block text-xs text-white/45">
+              Non-refundable. Added to the total.
+            </span>
+          </label>
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-white">
+              Deposit before work (%)
+            </span>
+            <input
+              name="invoiceDepositPercent"
+              value={depositPercent}
+              onChange={(event) => setDepositPercent(event.target.value)}
+              inputMode="numeric"
+              className={fieldClass}
+            />
+            <span className="mt-1.5 block text-xs text-white/45">
+              Balance is due after the work is completed.
+            </span>
           </label>
         </div>
+
+        <ul className="list-disc space-y-1 pl-5 text-xs text-white/45">
+          {invoiceTerms.map((term) => (
+            <li key={term}>{term}</li>
+          ))}
+        </ul>
+
+        <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-white/80">
+          <p className="flex justify-between gap-4">
+            <span>Items</span>
+            <span>{formatZar(totals.itemsTotal)}</span>
+          </p>
+          <p className="mt-1 flex justify-between gap-4">
+            <span>Call-out fee</span>
+            <span>{formatZar(totals.callout)}</span>
+          </p>
+          <p className="mt-2 flex justify-between gap-4 font-semibold text-white">
+            <span>Total</span>
+            <span className="text-accent">{formatZar(totals.total)}</span>
+          </p>
+          <p className="mt-3 flex justify-between gap-4 text-xs text-white/55">
+            <span>Deposit due before work ({totals.depositPercent}%)</span>
+            <span>{formatZar(totals.depositDue)}</span>
+          </p>
+          <p className="mt-1 flex justify-between gap-4 text-xs text-white/55">
+            <span>Balance due after work</span>
+            <span>{formatZar(totals.balanceDue)}</span>
+          </p>
+        </div>
+
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-white">
-            Invoice description
-          </span>
-          <textarea
-            name="invoiceDescription"
-            defaultValue={invoice.description}
-            rows={3}
-            placeholder="What this invoice is for…"
-            className={`${fieldClass} resize-y`}
-          />
-        </label>
-        <label className="block">
-          <span className="mb-2 block text-sm font-medium text-white">
-            Payment details
+            Extra payment notes
           </span>
           <textarea
             name="invoicePaymentDetails"
-            defaultValue={invoice.paymentDetails}
+            defaultValue={
+              invoice.paymentDetails === invoicePaymentDetails(clientName)
+                ? ""
+                : invoice.paymentDetails
+            }
             rows={3}
-            placeholder="Bank, account name, account number, reference…"
+            placeholder="Optional notes only. FNB details are added to the PDF automatically."
             className={`${fieldClass} resize-y`}
           />
+          <span className="mt-2 block text-xs text-white/45">
+            Every invoice includes FNB Business account {site.banking.accountNumber},{" "}
+            {site.banking.accountName}, branch {site.banking.branchCode}. Reference
+            is the client’s name.
+          </span>
         </label>
         {invoice.sentAt ? (
           <p className="text-xs text-white/45">

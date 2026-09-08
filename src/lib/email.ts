@@ -1,7 +1,13 @@
 import nodemailer from "nodemailer";
 import { site } from "@/lib/site";
 import { formatDate, formatOrderNumber, formatZar } from "@/lib/inbox/format";
-import type { InvoiceDetails } from "@/lib/inbox/invoice";
+import {
+  invoiceIsSendable,
+  invoiceTerms,
+  invoiceTotals,
+  lineTotal,
+  type InvoiceDetails,
+} from "@/lib/inbox/invoice";
 import {
   buildInvoicePdf,
   invoicePdfFilename,
@@ -157,8 +163,29 @@ export async function sendEmail(input: MailPayload): Promise<SendEmailResult> {
 }
 
 function invoiceBlock(invoice: InvoiceDetails) {
-  const amount = invoice.amount ?? 0;
+  const totals = invoiceTotals(invoice);
   const payment = invoice.paymentDetails.trim();
+  const itemRows = invoice.items
+    .map(
+      (item) => `<tr>
+                    <td style="padding:0 16px 8px;font-size:14px;color:#ffffff;">${escapeHtml(item.description)}</td>
+                    <td style="padding:0 8px 8px;font-size:14px;color:#d6d6d6;text-align:center;white-space:nowrap;">${item.quantity}</td>
+                    <td style="padding:0 8px 8px;font-size:14px;color:#d6d6d6;text-align:right;white-space:nowrap;">${escapeHtml(formatZar(item.unitPrice))}</td>
+                    <td style="padding:0 16px 8px;font-size:14px;color:#ffffff;text-align:right;white-space:nowrap;">${escapeHtml(formatZar(lineTotal(item)))}</td>
+                  </tr>`,
+    )
+    .join("");
+  const calloutRow =
+    totals.callout > 0
+      ? `<tr>
+                    <td colspan="3" style="padding:4px 16px 8px;font-size:14px;color:#d6d6d6;">Call-out fee (non-refundable)</td>
+                    <td style="padding:4px 16px 8px;font-size:14px;color:#ffffff;text-align:right;">${escapeHtml(formatZar(totals.callout))}</td>
+                  </tr>`
+      : "";
+  const termsHtml = invoiceTerms
+    .map((term) => `<li style="margin:0 0 6px;color:#d6d6d6;">${escapeHtml(term)}</li>`)
+    .join("");
+
   return `
             <tr>
               <td style="padding:0 28px 8px;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#12c8b0;">Invoice</td>
@@ -175,16 +202,30 @@ function invoiceBlock(invoice: InvoiceDetails) {
                     <td style="padding:0 16px 14px;font-size:15px;color:#d6d6d6;text-align:right;">${escapeHtml(formatDate(new Date().toISOString()))}</td>
                   </tr>
                   <tr>
-                    <td colspan="2" style="padding:0 16px 6px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;">Description</td>
+                    <td colspan="2" style="padding:0 16px 8px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="padding:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;">Item</td>
+                          <td style="padding:0 8px 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;text-align:center;">Qty</td>
+                          <td style="padding:0 8px 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;text-align:right;">Unit price</td>
+                          <td style="padding:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;text-align:right;">Amount</td>
+                        </tr>
+                        ${itemRows}
+                        ${calloutRow}
+                      </table>
+                    </td>
                   </tr>
                   <tr>
-                    <td colspan="2" style="padding:0 16px 14px;font-size:15px;line-height:1.6;color:#ffffff;">${noteToHtml(invoice.description)}</td>
+                    <td style="padding:8px 16px 4px;font-size:14px;color:#9a9a9a;">Total</td>
+                    <td style="padding:8px 16px 4px;font-size:18px;font-weight:700;color:#12c8b0;text-align:right;">${escapeHtml(formatZar(totals.total))}</td>
                   </tr>
                   <tr>
-                    <td colspan="2" style="padding:0 16px 6px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;">Amount due</td>
+                    <td style="padding:0 16px 4px;font-size:13px;color:#9a9a9a;">Deposit due before work (${totals.depositPercent}%)</td>
+                    <td style="padding:0 16px 4px;font-size:14px;color:#ffffff;text-align:right;">${escapeHtml(formatZar(totals.depositDue))}</td>
                   </tr>
                   <tr>
-                    <td colspan="2" style="padding:0 16px 16px;font-size:22px;font-weight:700;color:#12c8b0;">${escapeHtml(formatZar(amount))}</td>
+                    <td style="padding:0 16px 16px;font-size:13px;color:#9a9a9a;">Balance due after work</td>
+                    <td style="padding:0 16px 16px;font-size:14px;color:#ffffff;text-align:right;">${escapeHtml(formatZar(totals.balanceDue))}</td>
                   </tr>
                   ${
                     payment
@@ -196,6 +237,14 @@ function invoiceBlock(invoice: InvoiceDetails) {
                   </tr>`
                       : ""
                   }
+                  <tr>
+                    <td colspan="2" style="padding:0 16px 6px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;">Terms</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" style="padding:0 16px 16px;font-size:13px;line-height:1.5;">
+                      <ul style="margin:0;padding-left:18px;">${termsHtml}</ul>
+                    </td>
+                  </tr>
                 </table>
               </td>
             </tr>`;
@@ -204,12 +253,8 @@ function invoiceBlock(invoice: InvoiceDetails) {
 export async function sendClientUpdateEmail(input: ClientUpdateEmail) {
   const note = input.note.trim();
   const resolved = input.statusLabel === "Resolved";
-  const invoice =
-    input.invoice &&
-    input.invoice.description.trim() &&
-    input.invoice.amount !== null
-      ? input.invoice
-      : null;
+  const invoice = invoiceIsSendable(input.invoice) ? input.invoice : null;
+  const totals = invoice ? invoiceTotals(invoice) : null;
   const intro = resolved
     ? `We've marked your Techly ${input.recordLabel} as resolved.`
     : `We've updated your Techly ${input.recordLabel}.`;
@@ -228,11 +273,14 @@ export async function sendClientUpdateEmail(input: ClientUpdateEmail) {
     `Reference: ${formatOrderNumber(input.recordId)}`,
     `Status: ${input.statusLabel}`,
     ...(note ? ["", "Message from Techly:", note] : []),
-    ...(invoice
+    ...(invoice && totals
       ? [
           "",
           `A PDF invoice is attached: ${invoice.number}`,
-          `Amount due: ${formatZar(invoice.amount ?? 0)}`,
+          `Total: ${formatZar(totals.total)}`,
+          `Deposit due before work: ${formatZar(totals.depositDue)}`,
+          `Balance due after work: ${formatZar(totals.balanceDue)}`,
+          ...invoiceTerms.map((term) => `- ${term}`),
         ]
       : []),
     "",

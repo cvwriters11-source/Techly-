@@ -4,26 +4,34 @@ export function formatOrderNumber(id: string) {
   return `TECHLYPC ${match[1].padStart(3, "0")}`;
 }
 
+function localeSafe(value: string) {
+  return value.replace(/\u00a0|\u202f/g, " ");
+}
+
 export function formatDateTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("en-ZA", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
+  return localeSafe(
+    new Intl.DateTimeFormat("en-ZA", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(date),
+  );
 }
 
 export function formatDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(date);
+  return localeSafe(
+    new Intl.DateTimeFormat("en-ZA", { dateStyle: "medium" }).format(date),
+  );
 }
 
 export function formatZar(amount: number) {
-  return new Intl.NumberFormat("en-ZA", {
-    style: "currency",
-    currency: "ZAR",
-  }).format(amount);
+  const negative = amount < 0;
+  const [whole, cents] = Math.abs(amount).toFixed(2).split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return `${negative ? "-" : ""}R ${grouped},${cents}`;
 }
 
 export function ticketStatusLabel(status: string) {

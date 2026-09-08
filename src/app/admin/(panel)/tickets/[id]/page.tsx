@@ -114,6 +114,7 @@ export default async function AdminTicketDetailPage({
         invoice={ticket.invoice}
         suggestedInvoiceNumber={suggestedInvoiceNumber(ticket.id)}
         notifyEmail={ticket.email}
+        clientName={ticket.name}
         emailConfigured={isEmailConfigured()}
         statuses={[
           { value: "new", label: "New" },

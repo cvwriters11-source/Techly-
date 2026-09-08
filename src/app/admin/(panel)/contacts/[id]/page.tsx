@@ -82,6 +82,7 @@ export default async function AdminContactDetailPage({
         invoice={contact.invoice}
         suggestedInvoiceNumber={suggestedInvoiceNumber(contact.id)}
         notifyEmail={contact.email}
+        clientName={contact.name}
         emailConfigured={isEmailConfigured()}
         statuses={[
           { value: "new", label: "New" },

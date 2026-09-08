@@ -2,7 +2,13 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 import { formatDate, formatOrderNumber } from "@/lib/inbox/format";
-import type { InvoiceDetails } from "@/lib/inbox/invoice";
+import {
+  invoicePaymentDetails,
+  invoiceTerms,
+  invoiceTotals,
+  lineTotal,
+  type InvoiceDetails,
+} from "@/lib/inbox/invoice";
 import { site } from "@/lib/site";
 
 const teal = rgb(0.07, 0.784, 0.69);
@@ -199,97 +205,198 @@ export async function buildInvoicePdf(input: InvoicePdfInput) {
   page.drawText("Description", {
     x: margin + 12,
     y: y + 2,
-    size: 10,
+    size: 9,
     font: bold,
     color: white,
   });
-  const amountHeader = "Amount";
-  page.drawText(amountHeader, {
-    x: width - margin - 12 - bold.widthOfTextAtSize(amountHeader, 10),
+  page.drawText("Qty", {
+    x: 318,
     y: y + 2,
-    size: 10,
+    size: 9,
+    font: bold,
+    color: white,
+  });
+  page.drawText("Unit price", {
+    x: 358,
+    y: y + 2,
+    size: 9,
+    font: bold,
+    color: white,
+  });
+  page.drawText("Amount", {
+    x: width - margin - 12 - bold.widthOfTextAtSize("Amount", 9),
+    y: y + 2,
+    size: 9,
     font: bold,
     color: white,
   });
 
-  y -= 36;
-  const descLines = wrapText(invoice.description, font, 11, 360);
-  const blockTop = y + 12;
-  for (const descLine of descLines) {
-    page.drawText(descLine, {
-      x: margin + 12,
-      y,
-      size: 11,
+  y -= 28;
+  const lines =
+    invoice.items.length > 0
+      ? invoice.items
+      : invoice.description
+        ? [{ description: invoice.description, quantity: 1, unitPrice: amount }]
+        : [];
+  const totals = invoiceTotals(invoice);
+
+  for (const item of lines) {
+    const descLines = wrapText(item.description, font, 10, 250);
+    const rowTop = y;
+    for (const descLine of descLines) {
+      page.drawText(descLine, {
+        x: margin + 12,
+        y,
+        size: 10,
+        font,
+        color: navy,
+      });
+      y -= 13;
+    }
+    const qty = String(item.quantity);
+    const unit = money(item.unitPrice);
+    const rowAmount = money(lineTotal(item));
+    page.drawText(qty, {
+      x: 318,
+      y: rowTop,
+      size: 10,
       font,
       color: navy,
     });
-    y -= 15;
+    page.drawText(unit, {
+      x: 358,
+      y: rowTop,
+      size: 10,
+      font,
+      color: navy,
+    });
+    page.drawText(rowAmount, {
+      x: width - margin - 12 - font.widthOfTextAtSize(rowAmount, 10),
+      y: rowTop,
+      size: 10,
+      font,
+      color: navy,
+    });
+    y -= 6;
   }
-  const amountText = money(amount);
-  page.drawText(amountText, {
-    x: width - margin - 12 - font.widthOfTextAtSize(amountText, 11),
-    y: blockTop - 12,
-    size: 11,
-    font,
-    color: navy,
-  });
 
-  y -= 10;
+  if (totals.callout > 0) {
+    page.drawText("Call-out fee (non-refundable)", {
+      x: margin + 12,
+      y,
+      size: 10,
+      font,
+      color: navy,
+    });
+    const calloutText = money(totals.callout);
+    page.drawText(calloutText, {
+      x: width - margin - 12 - font.widthOfTextAtSize(calloutText, 10),
+      y,
+      size: 10,
+      font,
+      color: navy,
+    });
+    y -= 16;
+  }
+
+  y -= 4;
   page.drawLine({
     start: { x: margin, y },
     end: { x: width - margin, y },
     thickness: 1,
     color: line,
   });
-  y -= 28;
-  page.drawText("Amount due", {
-    x: 340,
+  y -= 22;
+  const summaryRows: Array<[string, string, boolean]> = [
+    ["Items", money(totals.itemsTotal), false],
+  ];
+  if (totals.callout > 0) {
+    summaryRows.push(["Call-out fee (non-refundable)", money(totals.callout), false]);
+  }
+  summaryRows.push(
+    ["Total", money(totals.total), true],
+    [`Deposit due before work (${totals.depositPercent}%)`, money(totals.depositDue), true],
+    ["Balance due after work", money(totals.balanceDue), true],
+  );
+  for (const [label, value, emphasize] of summaryRows) {
+    page.drawText(label, {
+      x: 300,
+      y,
+      size: emphasize ? 11 : 10,
+      font: emphasize ? bold : font,
+      color: emphasize ? navy : muted,
+    });
+    page.drawText(value, {
+      x: width - margin - (emphasize ? bold : font).widthOfTextAtSize(value, emphasize ? 11 : 10),
+      y,
+      size: emphasize ? 11 : 10,
+      font: emphasize ? bold : font,
+      color: emphasize ? teal : navy,
+    });
+    y -= emphasize ? 16 : 14;
+  }
+
+  const standardPayment = invoicePaymentDetails(input.clientName);
+  const extraPayment = invoice.paymentDetails.trim();
+  const paymentText =
+    extraPayment && extraPayment !== standardPayment
+      ? `${standardPayment}\n\n${extraPayment}`
+      : standardPayment;
+
+  y -= 20;
+  page.drawText("Payment details", {
+    x: margin,
     y,
-    size: 11,
-    font,
-    color: muted,
-  });
-  page.drawText(amountText, {
-    x: width - margin - bold.widthOfTextAtSize(amountText, 16),
-    y: y - 2,
-    size: 16,
+    size: 10,
     font: bold,
     color: teal,
   });
-
-  if (invoice.paymentDetails.trim()) {
-    y -= 48;
-    page.drawText("Payment details", {
-      x: margin,
-      y,
+  y -= 8;
+  const payLines = wrapText(paymentText, font, 10, width - margin * 2 - 24);
+  const boxHeight = payLines.length * 14 + 20;
+  page.drawRectangle({
+    x: margin,
+    y: y - boxHeight,
+    width: width - margin * 2,
+    height: boxHeight,
+    color: rgb(0.96, 0.98, 0.98),
+    borderColor: line,
+    borderWidth: 1,
+  });
+  let payY = y - 16;
+  for (const payLine of payLines) {
+    page.drawText(payLine, {
+      x: margin + 12,
+      y: payY,
       size: 10,
-      font: bold,
-      color: teal,
+      font,
+      color: navy,
     });
-    y -= 8;
-    const payLines = wrapText(invoice.paymentDetails, font, 10, width - margin * 2 - 24);
-    const boxHeight = payLines.length * 14 + 20;
-    page.drawRectangle({
-      x: margin,
-      y: y - boxHeight,
-      width: width - margin * 2,
-      height: boxHeight,
-      color: rgb(0.96, 0.98, 0.98),
-      borderColor: line,
-      borderWidth: 1,
-    });
-    let payY = y - 16;
-    for (const payLine of payLines) {
-      page.drawText(payLine, {
-        x: margin + 12,
-        y: payY,
-        size: 10,
+    payY -= 14;
+  }
+
+  y = y - boxHeight - 22;
+  page.drawText("Terms", {
+    x: margin,
+    y,
+    size: 10,
+    font: bold,
+    color: teal,
+  });
+  y -= 16;
+  for (const [index, term] of invoiceTerms.entries()) {
+    const termLines = wrapText(`${index + 1}. ${term}`, font, 9, width - margin * 2);
+    for (const termLine of termLines) {
+      page.drawText(termLine, {
+        x: margin,
+        y,
+        size: 9,
         font,
         color: navy,
       });
-      payY -= 14;
+      y -= 12;
     }
-    y = y - boxHeight;
+    y -= 2;
   }
 
   page.drawLine({

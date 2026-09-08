@@ -1,6 +1,6 @@
 export const site = {
   name: "Techly",
-  legalName: "Techly",
+  legalName: "Techly PC (PTY) LTD",
   url: "https://techlypc.co.za",
   tagline: "Custom Software & IT Solutions Built Around Your Business",
   headline: "BUILD. AUTOMATE. CONNECT. GROW.",
@@ -14,6 +14,12 @@ export const site = {
   location: "South Africa · Remote nationwide · Onsite on request",
   hours: "Monday – Friday, 08:00 – 17:00 SAST",
   hoursShort: "Mon–Fri, 08:00–17:00",
+  banking: {
+    bank: "FNB Business",
+    accountNumber: "63171187090",
+    accountName: "Techly PC (PTY) LTD",
+    branchCode: "250655",
+  },
   social: {
     linkedin: "https://www.linkedin.com/",
     facebook: "https://www.facebook.com/",

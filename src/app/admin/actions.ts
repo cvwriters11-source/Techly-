@@ -89,7 +89,7 @@ export async function saveTicketUpdate(
   const ticket = await updateTicket(id, {
     status,
     adminNote,
-    invoice: parsedInvoice.invoice,
+    ...(parsedInvoice.include ? { invoice: parsedInvoice.invoice } : {}),
   });
   revalidatePath("/admin");
   revalidatePath("/admin/tickets");
@@ -183,7 +183,7 @@ export async function saveContactUpdate(
   const contact = await updateContact(id, {
     status,
     adminNote,
-    invoice: parsedInvoice.invoice,
+    ...(parsedInvoice.include ? { invoice: parsedInvoice.invoice } : {}),
   });
   revalidatePath("/admin");
   revalidatePath("/admin/contacts");

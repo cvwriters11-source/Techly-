@@ -1,4 +1,4 @@
-import { emptyInvoice, type InvoiceDetails } from "@/lib/inbox/invoice";
+import { emptyInvoice, decodeInvoiceDescription, encodeInvoiceDescription, type InvoiceDetails } from "@/lib/inbox/invoice";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const ticketStatuses = ["new", "in_progress", "resolved"] as const;
@@ -101,12 +101,17 @@ function invoiceFromRow(row: {
   invoice_payment_details: string | null;
   invoice_sent_at: string | null;
 }): InvoiceDetails {
+  const amount = toAmount(row.invoice_amount);
+  const decoded = decodeInvoiceDescription(row.invoice_description ?? "", amount);
   return {
     number: row.invoice_number ?? "",
-    description: row.invoice_description ?? "",
-    amount: toAmount(row.invoice_amount),
+    description: decoded.description,
+    amount,
     paymentDetails: row.invoice_payment_details ?? "",
     sentAt: row.invoice_sent_at,
+    items: decoded.items,
+    calloutFee: decoded.calloutFee,
+    depositPercent: decoded.depositPercent,
   };
 }
 
@@ -114,7 +119,7 @@ function invoiceColumns(invoice?: InvoiceDetails) {
   const value = invoice ?? emptyInvoice();
   return {
     invoice_number: value.number,
-    invoice_description: value.description,
+    invoice_description: encodeInvoiceDescription(value),
     invoice_amount: value.amount,
     invoice_payment_details: value.paymentDetails,
     invoice_sent_at: value.sentAt,
