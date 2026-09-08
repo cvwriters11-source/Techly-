@@ -8,8 +8,8 @@ import { BrandSpinBackdrop } from "@/components/brand-spin-backdrop";
 import { Button } from "@/components/ui/button";
 import type { SiteMessage } from "@/lib/site-messages/store";
 
-export const PROMO_FIRST_DELAY_MS = 5 * 60 * 1000;
-export const PROMO_REPEAT_DELAY_MS = 20 * 60 * 1000;
+export const PROMO_FIRST_DELAY_MS = 2 * 60 * 1000;
+export const PROMO_REPEAT_DELAY_MS = 4 * 60 * 1000;
 
 const servicePills = [
   "Software Development",
@@ -52,7 +52,10 @@ export function PromoPopup({ message }: { message: SiteMessage }) {
 
     setOpen(false);
     const first = window.setTimeout(() => setOpen(true), firstDelay);
-    const second = window.setTimeout(() => setOpen(true), secondDelay);
+    const second = window.setTimeout(
+      () => setOpen(true),
+      firstDelay + secondDelay,
+    );
     return () => {
       window.clearTimeout(first);
       window.clearTimeout(second);

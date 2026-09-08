@@ -2,8 +2,8 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import { CheckCircle2, ChevronDown } from "lucide-react";
-import { BrandSpinBackdrop } from "@/components/brand-spin-backdrop";
 import { Button } from "@/components/ui/button";
 import { submitContact, type ContactState } from "@/app/contact/actions";
 import { cn } from "@/lib/utils";
@@ -196,7 +196,20 @@ function RequestReceivedPopup({
         className="relative flex h-[min(680px,92dvh)] w-full max-w-[390px] flex-col overflow-hidden rounded-[2.4rem] border border-accent/50 bg-[#111] px-6 py-8 text-center shadow-[0_0_80px_rgba(18,200,176,0.18)]"
         onClick={(event) => event.stopPropagation()}
       >
-        <BrandSpinBackdrop />
+        <div
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          aria-hidden="true"
+        >
+          <div className="absolute left-1/2 top-[46%] size-[22rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/25 blur-3xl" />
+          <div className="absolute left-1/2 top-[46%] size-[21rem] -translate-x-1/2 -translate-y-1/2 animate-[spin_28s_linear_infinite_reverse] rounded-full border border-dashed border-accent/30" />
+          <Image
+            src="/techly-badge.png"
+            alt=""
+            width={400}
+            height={400}
+            className="absolute left-1/2 top-[46%] size-[19rem] max-w-none -translate-x-1/2 -translate-y-1/2 animate-[spin_18s_linear_infinite] rounded-full object-contain opacity-40 drop-shadow-[0_0_36px_rgba(18,200,176,0.45)]"
+          />
+        </div>
         <p className="relative z-10 text-xs font-semibold uppercase tracking-[0.28em] text-accent">
           Contact
         </p>

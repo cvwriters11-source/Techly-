@@ -30,8 +30,8 @@ export default async function AdminMessagesPage() {
         </p>
         <h1 className="mt-2 text-3xl font-semibold text-white">Messages</h1>
         <p className="mt-2 max-w-2xl text-sm text-white/60">
-          Promotions and warnings appear in the branded popup after 5 minutes on
-          each public page, then again after 20 minutes. The quotation button
+          Promotions and warnings appear in the branded popup after 2 minutes on
+          each public page, then again 4 minutes later. The quotation button
           always goes to Contact us.
         </p>
       </div>

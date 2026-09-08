@@ -63,7 +63,12 @@ export default async function AdminDashboardPage() {
           <Link href="/admin/projects" className="text-accent hover:text-white">
             Projects
           </Link>{" "}
-          to show it on the site as Our Profile.
+          to show it on the site as Our Profile. Promotions and warnings for the
+          site popup live under{" "}
+          <Link href="/admin/messages" className="text-accent hover:text-white">
+            Messages
+          </Link>
+          .
         </p>
       </div>
 
