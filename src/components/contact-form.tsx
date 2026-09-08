@@ -1,7 +1,9 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { CheckCircle2, ChevronDown } from "lucide-react";
+import { BrandSpinBackdrop } from "@/components/brand-spin-backdrop";
 import { Button } from "@/components/ui/button";
 import { submitContact, type ContactState } from "@/app/contact/actions";
 import { cn } from "@/lib/utils";
@@ -108,7 +110,7 @@ function FormDropdown({
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen((current) => !current)}
         className={cn(
           inputClass,
           "flex items-center justify-between text-left",
@@ -156,24 +158,93 @@ function FormDropdown({
   );
 }
 
+function RequestReceivedPopup({
+  open,
+  message,
+  onClose,
+}: {
+  open: boolean;
+  message: string;
+  onClose: () => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
+  if (!mounted || !open) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="request-received-title"
+      onClick={onClose}
+    >
+      <div
+        className="relative flex h-[min(680px,92dvh)] w-full max-w-[390px] flex-col overflow-hidden rounded-[2.4rem] border border-accent/50 bg-[#111] px-6 py-8 text-center shadow-[0_0_80px_rgba(18,200,176,0.18)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <BrandSpinBackdrop />
+        <p className="relative z-10 text-xs font-semibold uppercase tracking-[0.28em] text-accent">
+          Contact
+        </p>
+        <div className="relative z-10 flex flex-1 flex-col items-center justify-center">
+          <CheckCircle2 className="size-14 text-accent drop-shadow-[0_0_18px_rgba(18,200,176,0.65)]" />
+          <h2
+            id="request-received-title"
+            className="mt-6 text-4xl font-semibold leading-tight text-white"
+          >
+            Request received
+          </h2>
+          <p className="mt-6 text-lg leading-relaxed text-white/90">{message}</p>
+        </div>
+        <Button type="button" variant="solid" className="relative z-10 w-full py-3" onClick={onClose}>
+          OK
+        </Button>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export function ContactForm({
   defaultService,
 }: {
   defaultService?: string;
 }) {
   const [state, action, pending] = useActionState(submitContact, initial);
+  const [popupOpen, setPopupOpen] = useState(false);
+
+  useEffect(() => {
+    if (state.ok) setPopupOpen(true);
+  }, [state]);
 
   if (state.ok) {
     return (
-      <div className="rounded-[1.8rem] border border-accent/25 bg-accent/10 p-8">
-        <CheckCircle2 className="size-8 text-accent" />
-        <h3 className="mt-4 text-2xl font-semibold text-white">
-          Request received
-        </h3>
-        <p className="mt-3 text-sm leading-relaxed text-white/75">
-          {state.message}
-        </p>
-      </div>
+      <>
+        <RequestReceivedPopup
+          open={popupOpen}
+          message={state.message}
+          onClose={() => setPopupOpen(false)}
+        />
+        {!popupOpen ? (
+          <p className="text-sm leading-relaxed text-white/70">
+            Request received. {state.message}
+          </p>
+        ) : null}
+      </>
     );
   }
 

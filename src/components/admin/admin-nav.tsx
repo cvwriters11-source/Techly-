@@ -13,6 +13,7 @@ const links = [
   { href: "/admin/contacts", label: "Contact us", countKey: "contacts" as const },
   { href: "/admin/invoices", label: "Invoice file" },
   { href: "/admin/projects", label: "Projects" },
+  { href: "/admin/messages", label: "Messages" },
 ];
 
 function InboxBadge({ count, label }: { count: number; label: string }) {

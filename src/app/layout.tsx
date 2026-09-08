@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AppChrome } from "@/components/layout/app-chrome";
 import { getClientUser } from "@/lib/client-auth";
 import { site } from "@/lib/site";
+import { getPublicSiteMessage } from "@/lib/site-messages/store";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,7 +28,10 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const client = await getClientUser();
+  const [client, siteMessage] = await Promise.all([
+    getClientUser(),
+    getPublicSiteMessage(),
+  ]);
 
   return (
     <html
@@ -35,7 +39,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className="dark h-full antialiased"
     >
       <body className="flex min-h-full flex-col bg-background font-sans text-foreground">
-        <AppChrome signedIn={Boolean(client)}>{children}</AppChrome>
+        <AppChrome signedIn={Boolean(client)} siteMessage={siteMessage}>
+          {children}
+        </AppChrome>
       </body>
     </html>
   );
