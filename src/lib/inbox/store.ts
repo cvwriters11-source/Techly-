@@ -285,6 +285,124 @@ export async function countNewInbox() {
   };
 }
 
+export type InboxAlertPulse = {
+  signature: string;
+  tickets: number;
+  contacts: number;
+  alert: {
+    kind: "ticket" | "contact" | "follow_up";
+    title: string;
+    body: string;
+    href: string;
+  } | null;
+};
+
+function pulseFromRow(
+  kind: "ticket" | "contact" | "follow_up",
+  id: string,
+  at: string,
+  name: string,
+  company: string,
+  summary: string,
+) {
+  const titles = {
+    ticket: "New support ticket",
+    contact: "New Contact us request",
+    follow_up: "New client follow-up",
+  } as const;
+  const href =
+    kind === "contact"
+      ? `/admin/contacts/${encodeURIComponent(id)}`
+      : `/admin/tickets/${encodeURIComponent(id)}`;
+  const who = [name, company].filter(Boolean).join(" · ");
+  return {
+    at,
+    signature: `${kind}:${id}:${at}`,
+    alert: {
+      kind,
+      title: titles[kind],
+      body: summary ? `${who} — ${summary}` : who,
+      href,
+    },
+  };
+}
+
+export async function getInboxAlertPulse(): Promise<InboxAlertPulse> {
+  const supabase = createAdminClient();
+  const [counts, latestTicket, latestContact, latestFollowUp] = await Promise.all([
+    countNewInbox(),
+    supabase
+      .from("tickets")
+      .select("id, created_at, name, company, problems")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("contacts")
+      .select("id, created_at, name, company, service")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("tickets")
+      .select("id, name, company, client_follow_up, client_follow_up_at")
+      .not("client_follow_up_at", "is", null)
+      .order("client_follow_up_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  throwIfError(latestTicket.error);
+  throwIfError(latestContact.error);
+  throwIfError(latestFollowUp.error);
+
+  const events = [
+    latestTicket.data
+      ? pulseFromRow(
+          "ticket",
+          String(latestTicket.data.id),
+          String(latestTicket.data.created_at),
+          String(latestTicket.data.name ?? ""),
+          String(latestTicket.data.company ?? ""),
+          Array.isArray(latestTicket.data.problems)
+            ? String(latestTicket.data.problems[0] ?? "")
+            : "",
+        )
+      : null,
+    latestContact.data
+      ? pulseFromRow(
+          "contact",
+          String(latestContact.data.id),
+          String(latestContact.data.created_at),
+          String(latestContact.data.name ?? ""),
+          String(latestContact.data.company ?? ""),
+          String(latestContact.data.service ?? ""),
+        )
+      : null,
+    latestFollowUp.data?.client_follow_up_at
+      ? pulseFromRow(
+          "follow_up",
+          String(latestFollowUp.data.id),
+          String(latestFollowUp.data.client_follow_up_at),
+          String(latestFollowUp.data.name ?? ""),
+          String(latestFollowUp.data.company ?? ""),
+          String(latestFollowUp.data.client_follow_up ?? "Follow-up"),
+        )
+      : null,
+  ]
+    .filter((event) => event !== null)
+    .sort((a, b) => b.at.localeCompare(a.at));
+
+  const newest = events[0] ?? null;
+
+  return {
+    signature: newest?.signature ?? "empty",
+    tickets: counts.tickets,
+    contacts: counts.contacts,
+    alert: newest?.alert ?? null,
+  };
+}
+
 function recordId(id: string) {
   try {
     return decodeURIComponent(id);

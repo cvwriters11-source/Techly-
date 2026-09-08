@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { logoutAdmin } from "@/app/admin/actions";
+import { AdminInboxAlerts } from "@/components/admin/admin-inbox-alerts";
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 
@@ -86,6 +87,7 @@ export function AdminNav({
           </nav>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <AdminInboxAlerts />
           <Link
             href="/"
             className="whitespace-nowrap text-sm text-white/55 transition hover:text-white"
