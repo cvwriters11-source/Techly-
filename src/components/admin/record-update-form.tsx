@@ -107,8 +107,8 @@ export function RecordUpdateForm({
             Invoice
           </p>
           <p className="mt-1 text-xs text-white/45">
-            Fill this in to email an invoice with the update. Leave it blank to
-            send only the status and note.
+            Fill this in to email a Techly PC PDF invoice with the update. Leave
+            it blank to send only the status and note.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">

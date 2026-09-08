@@ -2,6 +2,10 @@ import nodemailer from "nodemailer";
 import { site } from "@/lib/site";
 import { formatDate, formatOrderNumber, formatZar } from "@/lib/inbox/format";
 import type { InvoiceDetails } from "@/lib/inbox/invoice";
+import {
+  buildInvoicePdf,
+  invoicePdfFilename,
+} from "@/lib/inbox/invoice-pdf";
 
 export type SendEmailResult = { ok: true } | { ok: false; error: string };
 
@@ -54,12 +58,19 @@ function adminBaseUrl() {
   return "https://techlypc.co.za";
 }
 
+type MailAttachment = {
+  filename: string;
+  content: Buffer;
+  contentType: string;
+};
+
 type MailPayload = {
   to: string;
   subject: string;
   text: string;
   html: string;
   replyTo?: string;
+  attachments?: MailAttachment[];
 };
 
 async function sendWithResend(input: MailPayload): Promise<SendEmailResult> {
@@ -76,6 +87,11 @@ async function sendWithResend(input: MailPayload): Promise<SendEmailResult> {
       subject: input.subject,
       text: input.text,
       html: input.html,
+      attachments: input.attachments?.map((file) => ({
+        filename: file.filename,
+        content: file.content.toString("base64"),
+        content_type: file.contentType,
+      })),
     }),
   });
 
@@ -109,6 +125,11 @@ async function sendWithSmtp(input: MailPayload): Promise<SendEmailResult> {
     subject: input.subject,
     text: input.text,
     html: input.html,
+    attachments: input.attachments?.map((file) => ({
+      filename: file.filename,
+      content: file.content,
+      contentType: file.contentType,
+    })),
   });
 
   return { ok: true };
@@ -210,13 +231,8 @@ export async function sendClientUpdateEmail(input: ClientUpdateEmail) {
     ...(invoice
       ? [
           "",
-          "Invoice",
-          `Number: ${invoice.number}`,
-          `Description: ${invoice.description}`,
+          `A PDF invoice is attached: ${invoice.number}`,
           `Amount due: ${formatZar(invoice.amount ?? 0)}`,
-          ...(invoice.paymentDetails.trim()
-            ? ["Payment details:", invoice.paymentDetails]
-            : []),
         ]
       : []),
     "",
@@ -272,6 +288,7 @@ export async function sendClientUpdateEmail(input: ClientUpdateEmail) {
             ${invoice ? invoiceBlock(invoice) : ""}
             <tr>
               <td style="padding:0 28px 28px;font-size:14px;line-height:1.6;color:#9a9a9a;">
+                ${invoice ? "The branded PDF invoice is attached to this email.<br />" : ""}
                 If you have questions, reply to this email.<br />
                 ${escapeHtml(site.email)}
               </td>
@@ -283,11 +300,39 @@ export async function sendClientUpdateEmail(input: ClientUpdateEmail) {
   </body>
 </html>`;
 
+  let attachments: MailAttachment[] | undefined;
+  if (invoice) {
+    try {
+      attachments = [
+        {
+          filename: invoicePdfFilename(invoice.number),
+          content: await buildInvoicePdf({
+            invoice,
+            clientName: input.name,
+            clientCompany: input.company,
+            clientEmail: input.to,
+            reference: input.recordId,
+          }),
+          contentType: "application/pdf",
+        },
+      ];
+    } catch (error) {
+      return {
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "The PDF invoice could not be created.",
+      };
+    }
+  }
+
   return sendEmail({
     to: input.to,
     subject,
     text,
     html,
+    attachments,
   });
 }
 
