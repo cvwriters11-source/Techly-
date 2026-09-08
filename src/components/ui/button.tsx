@@ -9,6 +9,7 @@ type ButtonProps = {
   children: React.ReactNode;
   type?: "button" | "submit";
   disabled?: boolean;
+  onClick?: () => void;
 };
 
 export function Button({
@@ -18,6 +19,7 @@ export function Button({
   children,
   type = "button",
   disabled,
+  onClick,
 }: ButtonProps) {
   if (variant === "arrow") {
     const classes = cn(
@@ -42,7 +44,7 @@ export function Button({
     }
 
     return (
-      <button type={type} disabled={disabled} className={classes}>
+      <button type={type} disabled={disabled} onClick={onClick} className={classes}>
         {inner}
       </button>
     );
@@ -65,7 +67,7 @@ export function Button({
   }
 
   return (
-    <button type={type} disabled={disabled} className={classes}>
+    <button type={type} disabled={disabled} onClick={onClick} className={classes}>
       {children}
     </button>
   );

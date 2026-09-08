@@ -55,7 +55,11 @@ export default async function AdminDashboardPage() {
         <h1 className="mt-2 text-3xl font-semibold text-white">Admin dashboard</h1>
         <p className="mt-2 max-w-2xl text-sm text-white/60">
           Every Log a Ticket and Contact us submission is stored here with the
-          full client details. Add completed work under{" "}
+          full client details. Emailed invoices stay in the{" "}
+          <Link href="/admin/invoices" className="text-accent hover:text-white">
+            Invoice file
+          </Link>
+          . Add completed work under{" "}
           <Link href="/admin/projects" className="text-accent hover:text-white">
             Projects
           </Link>{" "}

@@ -11,6 +11,7 @@ const links = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/tickets", label: "Tickets", countKey: "tickets" as const },
   { href: "/admin/contacts", label: "Contact us", countKey: "contacts" as const },
+  { href: "/admin/invoices", label: "Invoice file" },
   { href: "/admin/projects", label: "Projects" },
 ];
 

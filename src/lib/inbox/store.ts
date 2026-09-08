@@ -28,6 +28,16 @@ export type TicketRecord = {
   clientFollowUpAt: string | null;
 };
 
+export type InvoiceFileRecord = {
+  invoice: InvoiceDetails;
+  source: "ticket" | "contact";
+  recordId: string;
+  clientName: string;
+  clientCompany: string;
+  clientEmail: string;
+  recordHref: string;
+};
+
 export type ContactRecord = {
   id: string;
   createdAt: string;
@@ -391,6 +401,63 @@ export async function getClientTicket(
     ticket.userId === userId ||
     ticket.email.trim().toLowerCase() === email.trim().toLowerCase();
   return owns ? ticket : null;
+}
+
+function hasFiledInvoice(invoice: InvoiceDetails) {
+  return Boolean(invoice.number.trim() && (invoice.items.length > 0 || invoice.amount !== null));
+}
+
+function normalizeInvoiceQuery(value: string) {
+  return value.trim().replace(/\s+/g, "").toLowerCase();
+}
+
+export function invoiceMatchesQuery(invoiceNumber: string, query: string) {
+  const needle = normalizeInvoiceQuery(query);
+  if (!needle) return true;
+  const haystack = normalizeInvoiceQuery(invoiceNumber);
+  return haystack.includes(needle);
+}
+
+export async function listInvoiceFile(query = "") {
+  const { tickets, contacts } = await listInbox();
+  const rows: InvoiceFileRecord[] = [
+    ...tickets.filter((ticket) => hasFiledInvoice(ticket.invoice)).map((ticket) => ({
+      invoice: ticket.invoice,
+      source: "ticket" as const,
+      recordId: ticket.id,
+      clientName: ticket.name,
+      clientCompany: ticket.company,
+      clientEmail: ticket.email,
+      recordHref: `/admin/tickets/${ticket.id}`,
+    })),
+    ...contacts.filter((contact) => hasFiledInvoice(contact.invoice)).map((contact) => ({
+      invoice: contact.invoice,
+      source: "contact" as const,
+      recordId: contact.id,
+      clientName: contact.name,
+      clientCompany: contact.company,
+      clientEmail: contact.email,
+      recordHref: `/admin/contacts/${contact.id}`,
+    })),
+  ]
+    .filter((row) => invoiceMatchesQuery(row.invoice.number, query))
+    .sort((left, right) => {
+      const leftDate = left.invoice.sentAt || "";
+      const rightDate = right.invoice.sentAt || "";
+      return rightDate.localeCompare(leftDate);
+    });
+
+  return rows;
+}
+
+export async function getInvoiceFileRecord(number: string) {
+  const rows = await listInvoiceFile(number);
+  const exact = normalizeInvoiceQuery(number);
+  return (
+    rows.find((row) => normalizeInvoiceQuery(row.invoice.number) === exact) ??
+    rows[0] ??
+    null
+  );
 }
 
 export async function addClientFollowUp(

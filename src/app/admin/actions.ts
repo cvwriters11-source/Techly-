@@ -62,6 +62,10 @@ export async function logoutAdmin() {
 export type RecordUpdateState = {
   ok: boolean;
   message: string;
+  emailed?: boolean;
+  invoiceNumber?: string;
+  clientEmail?: string;
+  redirectTo?: string;
 };
 
 function recordId(formData: FormData) {
@@ -139,12 +143,8 @@ export async function saveTicketUpdate(
     revalidatePath(`/admin/tickets/${id}`);
   }
 
-  if (status === "resolved") {
-    redirect(
-      emailed.ok
-        ? "/admin/tickets?resolved=1"
-        : "/admin/tickets?resolved=1&email=failed",
-    );
+  if (status === "resolved" && !emailed.ok) {
+    redirect("/admin/tickets?resolved=1&email=failed");
   }
 
   if (!emailed.ok) {
@@ -154,10 +154,16 @@ export async function saveTicketUpdate(
     };
   }
 
+  revalidatePath("/admin/invoices");
+
   return {
     ok: true,
+    emailed: true,
+    clientEmail: ticket.email,
+    invoiceNumber: parsedInvoice.include ? parsedInvoice.invoice.number : "",
+    redirectTo: status === "resolved" ? "/admin/tickets" : undefined,
     message: parsedInvoice.include
-      ? `Update and invoice emailed to ${ticket.email}.`
+      ? `The invoice ${parsedInvoice.invoice.number} was emailed to ${ticket.email} and saved in the invoice file.`
       : `Update emailed to ${ticket.email}.`,
   };
 }
@@ -228,12 +234,8 @@ export async function saveContactUpdate(
     revalidatePath(`/admin/contacts/${id}`);
   }
 
-  if (status === "closed") {
-    redirect(
-      emailed.ok
-        ? "/admin/contacts?closed=1"
-        : "/admin/contacts?closed=1&email=failed",
-    );
+  if (status === "closed" && !emailed.ok) {
+    redirect("/admin/contacts?closed=1&email=failed");
   }
 
   if (!emailed.ok) {
@@ -243,10 +245,16 @@ export async function saveContactUpdate(
     };
   }
 
+  revalidatePath("/admin/invoices");
+
   return {
     ok: true,
+    emailed: true,
+    clientEmail: contact.email,
+    invoiceNumber: parsedInvoice.include ? parsedInvoice.invoice.number : "",
+    redirectTo: status === "closed" ? "/admin/contacts" : undefined,
     message: parsedInvoice.include
-      ? `Update and invoice emailed to ${contact.email}.`
+      ? `The invoice ${parsedInvoice.invoice.number} was emailed to ${contact.email} and saved in the invoice file.`
       : `Update emailed to ${contact.email}.`,
   };
 }

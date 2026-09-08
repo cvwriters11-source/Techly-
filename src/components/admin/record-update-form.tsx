@@ -1,6 +1,8 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import type { RecordUpdateState } from "@/app/admin/actions";
 import { formatDateTime, formatZar } from "@/lib/inbox/format";
@@ -49,6 +51,8 @@ export function RecordUpdateForm({
   clientName?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, initial);
+  const router = useRouter();
+  const [popupOpen, setPopupOpen] = useState(false);
   const [items, setItems] = useState<InvoiceLine[]>(
     invoice.items.length > 0 ? invoice.items : [emptyLine()],
   );
@@ -69,6 +73,15 @@ export function RecordUpdateForm({
     [items, calloutFee, depositPercent],
   );
 
+  useEffect(() => {
+    if (state.ok && state.emailed) setPopupOpen(true);
+  }, [state]);
+
+  function closePopup() {
+    setPopupOpen(false);
+    if (state.redirectTo) router.push(state.redirectTo);
+  }
+
   function updateLine(index: number, patch: Partial<InvoiceLine>) {
     setItems((current) =>
       current.map((line, lineIndex) =>
@@ -84,7 +97,7 @@ export function RecordUpdateForm({
     >
       <input type="hidden" name="recordId" value={id} />
       <input type="hidden" name="clientName" value={clientName} />
-      {state.message ? (
+      {state.message && !state.emailed ? (
         <p
           role="status"
           aria-live="polite"
@@ -335,6 +348,53 @@ export function RecordUpdateForm({
       <Button type="submit" variant="solid" disabled={pending}>
         {pending ? "Emailing client…" : "Save and email client"}
       </Button>
+
+      {popupOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-5"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="email-sent-title"
+          onClick={closePopup}
+        >
+          <div
+            className="w-full max-w-lg rounded-[1.8rem] border border-accent/40 bg-[#111] px-6 py-10 text-center shadow-2xl sm:px-10"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
+              Sent
+            </p>
+            <h2
+              id="email-sent-title"
+              className="mt-4 text-4xl font-semibold text-white sm:text-5xl"
+            >
+              Email sent
+            </h2>
+            <p className="mt-5 text-base leading-relaxed text-white/75">
+              {state.message}
+            </p>
+            {state.invoiceNumber ? (
+              <p className="mt-4 text-sm text-white/55">
+                Find it later in Invoice file with{" "}
+                <span className="font-medium text-white">{state.invoiceNumber}</span>.
+              </p>
+            ) : null}
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              {state.invoiceNumber ? (
+                <Link
+                  href={`/admin/invoices?q=${encodeURIComponent(state.invoiceNumber)}`}
+                  className="inline-flex items-center justify-center rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white hover:border-white/40"
+                >
+                  Open invoice file
+                </Link>
+              ) : null}
+              <Button type="button" variant="solid" onClick={closePopup}>
+                OK
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </form>
   );
 }
