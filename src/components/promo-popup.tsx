@@ -24,7 +24,8 @@ function shouldHidePopup(pathname: string) {
     pathname === "/contact" ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
-    pathname.startsWith("/marketing")
+    pathname.startsWith("/marketing") ||
+    pathname.startsWith("/career")
   );
 }
 

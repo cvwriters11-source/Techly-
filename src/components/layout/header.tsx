@@ -35,7 +35,9 @@ function AuthLink({
 }
 
 function navLabel(href: string, label: string, compact: boolean) {
-  if (compact && href === "/marketing") return "Marketing";
+  if (!compact) return label;
+  if (href === "/marketing") return "Marketing";
+  if (href === "/career") return "Career";
   return label;
 }
 
@@ -43,23 +45,40 @@ export function Header({
   signedIn,
   authMode = null,
   marketingPublicEnabled = true,
+  careerPublicEnabled = true,
 }: {
   signedIn: boolean;
-  authMode?: "client" | "marketing" | null;
+  authMode?: "client" | "marketing" | "career" | null;
   marketingPublicEnabled?: boolean;
+  careerPublicEnabled?: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+
   const dashboardHref =
-    authMode === "marketing" ? "/marketing/app" : "/account";
+    authMode === "marketing"
+      ? "/marketing/app"
+      : authMode === "career"
+        ? "/career/app"
+        : "/account";
   const dashboardLabel =
-    authMode === "marketing" ? "Dashboard" : "My tickets";
-  const secondaryHref = authMode === "marketing" ? "/marketing" : "/ticket";
+    authMode === "marketing" || authMode === "career"
+      ? "Dashboard"
+      : "My tickets";
+  const secondaryHref =
+    authMode === "marketing"
+      ? "/marketing"
+      : authMode === "career"
+        ? "/career"
+        : "/ticket";
   const secondaryLabel =
-    authMode === "marketing" ? "Home" : "Log a ticket";
-  const items = nav.filter(
-    (item) => marketingPublicEnabled || item.href !== "/marketing",
-  );
+    authMode === "marketing" || authMode === "career" ? "Home" : "Log a ticket";
+
+  const items = nav.filter((item) => {
+    if (!marketingPublicEnabled && item.href === "/marketing") return false;
+    if (!careerPublicEnabled && item.href === "/career") return false;
+    return true;
+  });
 
   useEffect(() => {
     setOpen(false);
@@ -156,7 +175,9 @@ export function Header({
                   >
                     {authMode === "marketing"
                       ? "Marketing dashboard"
-                      : dashboardLabel}
+                      : authMode === "career"
+                        ? "Career dashboard"
+                        : dashboardLabel}
                   </Link>
                   <Link
                     href={secondaryHref}
@@ -165,7 +186,9 @@ export function Header({
                   >
                     {authMode === "marketing"
                       ? "Marketing home"
-                      : secondaryLabel}
+                      : authMode === "career"
+                        ? "Career home"
+                        : secondaryLabel}
                   </Link>
                   <form action={signOutClient}>
                     <button

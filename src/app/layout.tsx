@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import { AppChrome } from "@/components/layout/app-chrome";
 import { PromoPopup } from "@/components/promo-popup";
+import { getCareerAuthUser } from "@/lib/career/auth";
 import { getClientUser } from "@/lib/client-auth";
 import { getMarketingAuthUser } from "@/lib/marketing/auth";
 import { getPublicSiteMessage } from "@/lib/site-messages/store";
-import { isMarketingPublicEnabled } from "@/lib/site-settings/store";
+import {
+  isCareerPublicEnabled,
+  isMarketingPublicEnabled,
+} from "@/lib/site-settings/store";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -31,21 +35,38 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const [client, marketing, promoMessage, marketingPublicEnabled] =
-    await Promise.all([
-      getClientUser(),
-      getMarketingAuthUser(),
-      getPublicSiteMessage(),
-      isMarketingPublicEnabled(),
-    ]);
+  const [
+    client,
+    marketing,
+    career,
+    promoMessage,
+    marketingPublicEnabled,
+    careerPublicEnabled,
+  ] = await Promise.all([
+    getClientUser(),
+    getMarketingAuthUser(),
+    getCareerAuthUser(),
+    getPublicSiteMessage(),
+    isMarketingPublicEnabled(),
+    isCareerPublicEnabled(),
+  ]);
+
+  const authMode = marketing
+    ? "marketing"
+    : career
+      ? "career"
+      : client
+        ? "client"
+        : null;
 
   return (
     <html lang="en" className="dark h-full antialiased">
       <body className="flex min-h-full flex-col bg-background font-sans text-foreground">
         <AppChrome
-          signedIn={Boolean(client || marketing)}
-          authMode={marketing ? "marketing" : client ? "client" : null}
+          signedIn={Boolean(client || marketing || career)}
+          authMode={authMode}
           marketingPublicEnabled={marketingPublicEnabled}
+          careerPublicEnabled={careerPublicEnabled}
         >
           {children}
         </AppChrome>

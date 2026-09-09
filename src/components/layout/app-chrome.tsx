@@ -10,11 +10,13 @@ export function AppChrome({
   signedIn,
   authMode = null,
   marketingPublicEnabled = true,
+  careerPublicEnabled = true,
 }: {
   children: React.ReactNode;
   signedIn: boolean;
-  authMode?: "client" | "marketing" | null;
+  authMode?: "client" | "marketing" | "career" | null;
   marketingPublicEnabled?: boolean;
+  careerPublicEnabled?: boolean;
 }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
@@ -29,6 +31,7 @@ export function AppChrome({
         signedIn={signedIn}
         authMode={authMode}
         marketingPublicEnabled={marketingPublicEnabled}
+        careerPublicEnabled={careerPublicEnabled}
       />
       <main className="flex-1">{children}</main>
       <Footer />

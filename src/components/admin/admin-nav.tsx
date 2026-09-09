@@ -15,6 +15,7 @@ const links = [
   { href: "/admin/invoices", label: "Invoice file" },
   { href: "/admin/messages", label: "Messages" },
   { href: "/admin/marketing", label: "Marketing" },
+  { href: "/admin/career", label: "Career" },
   { href: "/admin/projects", label: "Projects" },
 ];
 
