@@ -25,6 +25,12 @@ export async function GET(request: Request) {
 
   if (message.audioPath) {
     const blob = await downloadCareerMessageAudio(message.audioPath);
+    if (!blob) {
+      return NextResponse.json(
+        { error: "Audio file could not be loaded." },
+        { status: 404 },
+      );
+    }
     const bytes = await blob.arrayBuffer();
     const type = blob.type || "audio/webm";
     return new NextResponse(bytes, {
