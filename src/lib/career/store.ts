@@ -54,6 +54,7 @@ export type CareerMessage = {
   sessionId: string;
   role: "coach" | "candidate";
   text: string;
+  audioPath: string | null;
 };
 
 type ProfileRow = {
@@ -90,6 +91,7 @@ type MessageRow = {
   session_id: string;
   role: string;
   text: string;
+  audio_path?: string | null;
 };
 
 function throwIfError(error: { message: string } | null) {
@@ -161,6 +163,7 @@ function mapMessage(row: MessageRow): CareerMessage {
     sessionId: row.session_id,
     role: row.role === "candidate" ? "candidate" : "coach",
     text: row.text,
+    audioPath: row.audio_path ?? null,
   };
 }
 
@@ -408,4 +411,70 @@ export async function countCareerSessionsForProfile(profileId: string) {
 
   throwIfError(error);
   return count ?? 0;
+}
+
+export async function getCareerMessage(id: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("career_messages")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  throwIfError(error);
+  return data ? mapMessage(data as MessageRow) : null;
+}
+
+export async function updateCareerMessageAudio(
+  messageId: string,
+  audioPath: string,
+) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("career_messages")
+    .update({ audio_path: audioPath })
+    .eq("id", messageId)
+    .select()
+    .maybeSingle();
+
+  throwIfError(error);
+  return data ? mapMessage(data as MessageRow) : null;
+}
+
+export async function uploadCareerMessageAudio(input: {
+  sessionId: string;
+  messageId: string;
+  bytes: ArrayBuffer | Buffer | Blob;
+  contentType: string;
+  extension: string;
+}) {
+  const supabase = createAdminClient();
+  const path = `${input.sessionId}/${input.messageId}.${input.extension}`;
+  const { error } = await supabase.storage
+    .from("career-audio")
+    .upload(path, input.bytes, {
+      contentType: input.contentType,
+      upsert: true,
+    });
+  throwIfError(error);
+  return updateCareerMessageAudio(input.messageId, path);
+}
+
+export async function downloadCareerMessageAudio(audioPath: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.storage
+    .from("career-audio")
+    .download(audioPath);
+  throwIfError(error);
+  return data;
+}
+
+export async function listCareerSessionsWithProfiles(limit = 60) {
+  const sessions = await listRecentCareerSessions(limit);
+  const profiles = await listCareerProfiles();
+  const byId = new Map(profiles.map((profile) => [profile.id, profile]));
+  return sessions.map((session) => ({
+    session,
+    profile: byId.get(session.profileId) ?? null,
+  }));
 }

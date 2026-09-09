@@ -263,10 +263,28 @@ function speakWithBrowser(text: string, preferred: CareerVoice) {
   });
 }
 
+async function uploadMessageAudio(
+  sessionId: string,
+  messageId: string,
+  blob: Blob,
+) {
+  const form = new FormData();
+  form.set("sessionId", sessionId);
+  form.set("messageId", messageId);
+  form.set(
+    "audio",
+    new File([blob], `${messageId}.webm`, {
+      type: blob.type || "audio/webm",
+    }),
+  );
+  await fetch("/api/career/audio", { method: "POST", body: form });
+}
+
 async function playCoachLine(
   text: string,
   voice: CareerVoice,
   sessionId: string,
+  messageId?: string,
 ) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 12_000);
@@ -284,6 +302,9 @@ async function playCoachLine(
     }
 
     const blob = await response.blob();
+    if (messageId) {
+      void uploadMessageAudio(sessionId, messageId, blob);
+    }
     const url = URL.createObjectURL(blob);
     await new Promise<void>((resolve, reject) => {
       const audio = new Audio(url);
@@ -323,6 +344,10 @@ export function CareerSessionRoom({
   const [remainingMs, setRemainingMs] = useState<number | null>(null);
   const [pending, startTransition] = useTransition();
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const pendingAudioRef = useRef<Blob | null>(null);
   const endedRef = useRef(false);
   const spokenCompletedRef = useRef<Set<string>>(new Set());
   const listRef = useRef<HTMLDivElement>(null);
@@ -384,7 +409,12 @@ export function CareerSessionRoom({
     setError("");
     setLiveTranscript("");
 
-    void playCoachLine(latestCoach.text, session.voice, session.id)
+    void playCoachLine(
+      latestCoach.text,
+      session.voice,
+      session.id,
+      latestCoach.id,
+    )
       .then(() => {
         if (cancelled || !sessionActiveRef.current) return;
         spokenCompletedRef.current.add(latestCoach.id);
@@ -419,6 +449,20 @@ export function CareerSessionRoom({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- listen helpers are stable enough for session turns
   }, [latestCoach?.id, session.id, session.voice, status]);
 
+  function stopMediaCapture() {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") {
+      try {
+        recorder.stop();
+      } catch {
+        /* ignore */
+      }
+    }
+    mediaRecorderRef.current = null;
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+  }
+
   function stopListening() {
     const recognition = recognitionRef.current;
     if (recognition) {
@@ -432,7 +476,38 @@ export function CareerSessionRoom({
       }
       recognitionRef.current = null;
     }
+    stopMediaCapture();
     setListening(false);
+  }
+
+  async function startMediaCapture() {
+    pendingAudioRef.current = null;
+    audioChunksRef.current = [];
+    if (!navigator.mediaDevices?.getUserMedia) return;
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaStreamRef.current = stream;
+    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+      ? "audio/webm;codecs=opus"
+      : MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : "";
+    const recorder = mimeType
+      ? new MediaRecorder(stream, { mimeType })
+      : new MediaRecorder(stream);
+    mediaRecorderRef.current = recorder;
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) audioChunksRef.current.push(event.data);
+    };
+    recorder.onstop = () => {
+      if (audioChunksRef.current.length > 0) {
+        pendingAudioRef.current = new Blob(audioChunksRef.current, {
+          type: recorder.mimeType || "audio/webm",
+        });
+      }
+      audioChunksRef.current = [];
+    };
+    recorder.start(250);
   }
 
   function startListening(autoSubmit: boolean) {
@@ -456,17 +531,61 @@ export function CareerSessionRoom({
     const finishUtterance = () => {
       if (silenceTimer) window.clearTimeout(silenceTimer);
       const spoken = finalText.trim();
-      stopListening();
-      if (spoken.length < 2) {
-        setPhase("your_turn");
-        return;
+
+      const stopCapture = new Promise<Blob | null>((resolve) => {
+        const recorder = mediaRecorderRef.current;
+        if (!recorder || recorder.state === "inactive") {
+          resolve(pendingAudioRef.current);
+          return;
+        }
+        recorder.onstop = () => {
+          const blob =
+            audioChunksRef.current.length > 0
+              ? new Blob(audioChunksRef.current, {
+                  type: recorder.mimeType || "audio/webm",
+                })
+              : null;
+          audioChunksRef.current = [];
+          resolve(blob);
+        };
+        try {
+          recorder.stop();
+        } catch {
+          resolve(null);
+        }
+      });
+
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+      mediaRecorderRef.current = null;
+
+      const recognitionHandle = recognitionRef.current;
+      if (recognitionHandle) {
+        recognitionHandle.onend = null;
+        recognitionHandle.onresult = null;
+        recognitionHandle.onerror = null;
+        try {
+          recognitionHandle.stop();
+        } catch {
+          recognitionHandle.abort?.();
+        }
+        recognitionRef.current = null;
       }
-      if (autoSubmit) {
-        void submitSpokenAnswer(spoken);
-      } else {
-        setLiveTranscript(spoken);
-        setPhase("your_turn");
-      }
+      setListening(false);
+
+      void stopCapture.then((blob) => {
+        pendingAudioRef.current = blob;
+        if (spoken.length < 2) {
+          setPhase("your_turn");
+          return;
+        }
+        if (autoSubmit) {
+          void submitSpokenAnswer(spoken);
+        } else {
+          setLiveTranscript(spoken);
+          setPhase("your_turn");
+        }
+      });
     };
 
     recognition.onresult = (event) => {
@@ -486,7 +605,7 @@ export function CareerSessionRoom({
     };
     recognition.onerror = () => {
       if (silenceTimer) window.clearTimeout(silenceTimer);
-      setListening(false);
+      stopListening();
       setPhase("your_turn");
     };
     recognition.onend = () => {
@@ -495,14 +614,22 @@ export function CareerSessionRoom({
     };
 
     recognitionRef.current = recognition;
-    try {
-      recognition.start();
-      setListening(true);
-      setPhase("your_turn");
-    } catch {
-      setError("Could not open the microphone. Allow mic access and try again.");
-      setPhase("your_turn");
-    }
+    void startMediaCapture()
+      .catch(() => {
+        /* speech can continue even if recording fails */
+      })
+      .finally(() => {
+        try {
+          recognition.start();
+          setListening(true);
+          setPhase("your_turn");
+        } catch {
+          setError(
+            "Could not open the microphone. Allow mic access and try again.",
+          );
+          setPhase("your_turn");
+        }
+      });
   }
 
   startListeningRef.current = startListening;
@@ -511,6 +638,8 @@ export function CareerSessionRoom({
     const text = spoken.trim();
     if (text.length < 2 || !active || pending) return;
 
+    const recorded = pendingAudioRef.current;
+    pendingAudioRef.current = null;
     stopListening();
     setPhase("thinking");
     setLiveTranscript("");
@@ -518,18 +647,12 @@ export function CareerSessionRoom({
     startTransition(async () => {
       setError("");
       try {
-        const coachMessage = await submitCareerAnswerAction(session.id, text);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `local-${Date.now()}`,
-            createdAt: new Date().toISOString(),
-            sessionId: session.id,
-            role: "candidate",
-            text,
-          },
-          coachMessage,
-        ]);
+        const { candidateMessage, coachMessage } =
+          await submitCareerAnswerAction(session.id, text);
+        setMessages((prev) => [...prev, candidateMessage, coachMessage]);
+        if (recorded) {
+          void uploadMessageAudio(session.id, candidateMessage.id, recorded);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Could not send answer.");
         setLiveTranscript(text);

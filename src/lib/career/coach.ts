@@ -269,7 +269,7 @@ export async function continueCareerCoachTurn(
   }
 
   const profile = await getCareerProfile(session.profileId);
-  await addCareerMessage({
+  const candidateMessage = await addCareerMessage({
     sessionId,
     role: "candidate",
     text: answer,
@@ -284,11 +284,13 @@ export async function continueCareerCoachTurn(
     candidateAnswer: answer,
   });
 
-  return addCareerMessage({
+  const coachMessage = await addCareerMessage({
     sessionId,
     role: "coach",
     text,
   });
+
+  return { candidateMessage, coachMessage };
 }
 
 export async function completeCareerSession(sessionId: string) {
