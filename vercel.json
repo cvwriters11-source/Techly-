@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/marketing/run",
+      "schedule": "*/15 * * * *"
+    }
+  ]
+}

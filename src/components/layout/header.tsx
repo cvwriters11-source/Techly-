@@ -23,7 +23,7 @@ function AuthLink({
     <Link
       href={href}
       className={cn(
-        "whitespace-nowrap rounded-full border px-2.5 py-1.5 text-[13px] font-medium transition md:px-3.5 md:text-sm",
+        "whitespace-nowrap rounded-full border px-2.5 py-1.5 text-xs font-medium transition xl:px-3 xl:text-sm",
         accent
           ? "border-accent bg-accent text-black"
           : "border-white/20 bg-white/5 text-white hover:border-accent/70 hover:bg-white/10",
@@ -34,9 +34,32 @@ function AuthLink({
   );
 }
 
-export function Header({ signedIn }: { signedIn: boolean }) {
+function navLabel(href: string, label: string, compact: boolean) {
+  if (compact && href === "/marketing") return "Marketing";
+  return label;
+}
+
+export function Header({
+  signedIn,
+  authMode = null,
+  marketingPublicEnabled = true,
+}: {
+  signedIn: boolean;
+  authMode?: "client" | "marketing" | null;
+  marketingPublicEnabled?: boolean;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const dashboardHref =
+    authMode === "marketing" ? "/marketing/app" : "/account";
+  const dashboardLabel =
+    authMode === "marketing" ? "Dashboard" : "My tickets";
+  const secondaryHref = authMode === "marketing" ? "/marketing" : "/ticket";
+  const secondaryLabel =
+    authMode === "marketing" ? "Home" : "Log a ticket";
+  const items = nav.filter(
+    (item) => marketingPublicEnabled || item.href !== "/marketing",
+  );
 
   useEffect(() => {
     setOpen(false);
@@ -44,48 +67,49 @@ export function Header({ signedIn }: { signedIn: boolean }) {
 
   return (
     <header className="sticky top-0 z-50 bg-black/70 py-3 backdrop-blur-xl">
-      <Container className="flex h-[88px] items-center gap-3 rounded-2xl border border-white/20 bg-black/90 px-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_1px_0_0_rgba(18,200,176,0.45)] sm:gap-4 sm:px-4">
+      <Container className="flex h-[72px] items-center gap-2 rounded-2xl border border-white/20 bg-black/90 px-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_1px_0_0_rgba(18,200,176,0.45)] sm:h-[80px] sm:gap-3 sm:px-4 lg:h-[88px]">
         <Link
           href="/"
           aria-label="Techly home"
           className="shrink-0"
           onClick={() => setOpen(false)}
         >
-          <Logo />
+          <Logo compact />
         </Link>
 
-        <nav className="hidden min-w-0 items-center gap-1 sm:flex md:gap-2">
-          {nav.map((item) => {
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex xl:gap-1.5">
+          {items.map((item) => {
             const active =
               item.href === "/"
                 ? pathname === "/"
                 : pathname.startsWith(item.href);
-            const compact = item.label === "Approach" || item.label === "Our Profile";
+            const secondary =
+              item.label === "Approach" || item.label === "Our Profile";
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "whitespace-nowrap rounded-full border px-2 py-1.5 text-xs font-medium transition md:px-3.5 md:text-sm",
-                  compact && "hidden xl:inline-flex",
+                  "whitespace-nowrap rounded-full border px-2 py-1.5 text-xs font-medium transition xl:px-3 xl:text-sm",
+                  secondary && "hidden 2xl:inline-flex",
                   active
                     ? "border-accent bg-accent text-black"
                     : "border-white/20 bg-white/5 text-white hover:border-accent/70 hover:bg-white/10",
                 )}
               >
-                {item.label}
+                {navLabel(item.href, item.label, true)}
               </Link>
             );
           })}
         </nav>
 
-        <div className="ml-auto hidden shrink-0 items-center gap-1.5 sm:flex">
+        <div className="ml-auto hidden shrink-0 items-center gap-1.5 lg:flex">
           {signedIn ? (
             <>
-              <AuthLink href="/account">My tickets</AuthLink>
-              <AuthLink href="/ticket" accent>
-                Log a ticket
+              <AuthLink href={dashboardHref}>{dashboardLabel}</AuthLink>
+              <AuthLink href={secondaryHref} accent>
+                {secondaryLabel}
               </AuthLink>
             </>
           ) : (
@@ -100,7 +124,7 @@ export function Header({ signedIn }: { signedIn: boolean }) {
 
         <button
           type="button"
-          className="ml-auto inline-flex size-10 items-center justify-center rounded-full border border-white/20 text-white sm:hidden"
+          className="ml-auto inline-flex size-10 items-center justify-center rounded-full border border-white/20 text-white lg:hidden"
           aria-expanded={open}
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((value) => !value)}
@@ -110,9 +134,9 @@ export function Header({ signedIn }: { signedIn: boolean }) {
       </Container>
 
       {open ? (
-        <div className="border-t border-white/10 bg-black sm:hidden">
+        <div className="border-t border-white/10 bg-black lg:hidden">
           <Container className="flex flex-col gap-1 py-4">
-            {nav.map((item) => (
+            {items.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -126,18 +150,22 @@ export function Header({ signedIn }: { signedIn: boolean }) {
               {signedIn ? (
                 <>
                   <Link
-                    href="/account"
+                    href={dashboardHref}
                     onClick={() => setOpen(false)}
                     className="rounded-full border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-medium text-white hover:border-accent/70 hover:bg-white/10"
                   >
-                    My tickets
+                    {authMode === "marketing"
+                      ? "Marketing dashboard"
+                      : dashboardLabel}
                   </Link>
                   <Link
-                    href="/ticket"
+                    href={secondaryHref}
                     onClick={() => setOpen(false)}
                     className="rounded-full border border-accent bg-accent px-4 py-2.5 text-sm font-medium text-black"
                   >
-                    Log a ticket
+                    {authMode === "marketing"
+                      ? "Marketing home"
+                      : secondaryLabel}
                   </Link>
                   <form action={signOutClient}>
                     <button

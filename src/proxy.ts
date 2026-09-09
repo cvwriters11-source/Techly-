@@ -13,6 +13,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  if (pathname.startsWith("/marketing/app") && !signedIn) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/marketing/login";
+    return NextResponse.redirect(loginUrl);
+  }
+
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
     if (!verifySessionToken(request.cookies.get(ADMIN_COOKIE)?.value)) {
       const loginUrl = request.nextUrl.clone();

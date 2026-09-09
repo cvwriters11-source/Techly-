@@ -17,6 +17,8 @@ export async function getClientUser(): Promise<ClientUser | null> {
     if (!user?.email) return null;
 
     const metadata = user.user_metadata ?? {};
+    if (metadata.kind === "marketing") return null;
+
     return {
       id: user.id,
       email: user.email,
