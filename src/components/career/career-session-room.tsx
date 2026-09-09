@@ -14,6 +14,11 @@ import {
   type CareerSession,
   type CareerVoice,
 } from "@/lib/career/store";
+import {
+  parseCareerReview,
+  scoreLabel,
+  type CareerSessionReview,
+} from "@/lib/career/interview-prep";
 import { Mic, MicOff, Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +56,116 @@ function formatRemaining(ms: number) {
   const minutes = Math.floor(total / 60);
   const seconds = total % 60;
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function SessionReviewCard({
+  summary,
+  review,
+}: {
+  summary: string;
+  review: CareerSessionReview | null;
+}) {
+  if (!review) {
+    return (
+      <div className="rounded-[1.4rem] border border-white/12 bg-[#111] p-4 sm:p-5">
+        <h2 className="text-lg font-semibold text-white">Session summary</h2>
+        <p className="mt-3 text-sm leading-relaxed whitespace-pre-wrap text-white/75">
+          {summary}
+        </p>
+        <Link
+          href="/career/app"
+          className="mt-4 inline-flex text-sm text-accent hover:underline"
+        >
+          Back to dashboard
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-[1.4rem] border border-white/12 bg-[#111] p-4 text-center sm:p-6">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-accent sm:text-xs">
+          Interview score
+        </p>
+        <p className="mt-3 text-5xl font-semibold text-white sm:text-6xl">
+          {review.score}
+          <span className="text-2xl text-white/45 sm:text-3xl">/100</span>
+        </p>
+        <p className="mt-2 text-sm font-medium text-accent">
+          {review.grade || scoreLabel(review.score)}
+        </p>
+        <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-white/70">
+          {review.overview}
+        </p>
+      </div>
+
+      {review.corrections.length > 0 ? (
+        <div className="rounded-[1.4rem] border border-white/12 bg-[#0c0c0c] p-4 sm:p-5">
+          <h2 className="text-lg font-semibold text-white">
+            Corrections — how to answer
+          </h2>
+          <p className="mt-1 text-sm text-white/50">
+            Review each answer and practise the stronger version in your own
+            words.
+          </p>
+          <div className="mt-4 space-y-4">
+            {review.corrections.map((item, index) => (
+              <div
+                key={`${item.question}-${index}`}
+                className="rounded-2xl border border-white/10 bg-black/30 p-3 sm:p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <p className="text-sm font-medium text-white">
+                    {index + 1}. {item.question}
+                  </p>
+                  <span className="rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent">
+                    {item.score}/100
+                  </span>
+                </div>
+                <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-white/40">
+                  Your answer
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-white/65">
+                  {item.yourAnswer || "—"}
+                </p>
+                <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-white/40">
+                  Coach feedback
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-white/80">
+                  {item.feedback}
+                </p>
+                <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-accent">
+                  Stronger answer
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-white">
+                  {item.betterAnswer}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {review.nextSteps.length > 0 ? (
+        <div className="rounded-[1.4rem] border border-white/12 bg-[#111] p-4 sm:p-5">
+          <h2 className="text-lg font-semibold text-white">Next steps</h2>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-white/75">
+            {review.nextSteps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      <Link
+        href="/career/app"
+        className="inline-flex text-sm text-accent hover:underline"
+      >
+        Back to dashboard
+      </Link>
+    </div>
+  );
 }
 
 function pickBrowserVoice(preferred: CareerVoice) {
@@ -452,6 +567,8 @@ export function CareerSessionRoom({
           ? "Coach thinking…"
           : "Session complete";
 
+  const review = summary ? parseCareerReview(summary) : null;
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex items-start justify-between gap-3">
@@ -517,7 +634,7 @@ export function CareerSessionRoom({
           </p>
           <p className="relative z-10 mt-1 max-w-md px-1 text-xs text-white/55 sm:mt-2 sm:text-sm">
             {phase === "coach"
-              ? "Listen — your mic opens when the coach finishes."
+              ? "Listen — the coach will correct you, then your mic opens."
               : phase === "your_turn" && listening
                 ? "Speak. Pause to send your answer."
                 : phase === "your_turn"
@@ -623,20 +740,7 @@ export function CareerSessionRoom({
         </div>
       ) : null}
 
-      {summary ? (
-        <div className="rounded-[1.4rem] border border-white/12 bg-[#111] p-4 sm:p-5">
-          <h2 className="text-lg font-semibold text-white">Session summary</h2>
-          <p className="mt-3 text-sm leading-relaxed whitespace-pre-wrap text-white/75">
-            {summary}
-          </p>
-          <Link
-            href="/career/app"
-            className="mt-4 inline-flex text-sm text-accent hover:underline"
-          >
-            Back to dashboard
-          </Link>
-        </div>
-      ) : null}
+      {summary ? <SessionReviewCard summary={summary} review={review} /> : null}
     </div>
   );
 }

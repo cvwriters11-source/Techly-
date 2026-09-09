@@ -3,9 +3,12 @@ import {
   INTERVIEW_PREP_BANK,
   INTERVIEW_PREP_REMINDERS,
   INTERVIEW_PREP_STAR,
+  buildFallbackSessionReview,
   interviewPrepAskedCount,
   interviewPrepBankForPrompt,
   interviewPrepItemAt,
+  serializeCareerReview,
+  type CareerSessionReview,
 } from "@/lib/career/interview-prep";
 import {
   addCareerMessage,
@@ -50,14 +53,19 @@ Session focus: ${focusLabel(session.focus as CareerFocus)}
 Session length: ${session.durationMinutes} minutes (${mins} minutes left)
 
 Rules:
-- Speak in clear, supportive South African English. Keep each reply short enough to say aloud (2–5 sentences).
-- Run an interactive mock interview / coaching dialogue. Ask one clear question at a time, then react to their answer with brief feedback and a follow-up.
-- Stay on the chosen focus (${focusLabel(session.focus as CareerFocus)}) while still practising interview-style Q&A.
+- Speak in clear, supportive South African English. Keep each reply short enough to say aloud (about 4–7 sentences).
+- Run an interactive mock interview. Ask one clear question at a time.
+- After every candidate answer you MUST correct them: say what worked, what was missing, then give a short stronger way to answer (adapted from the model answer, in their voice / role — not a robotic copy).
+- Stay on the chosen focus (${focusLabel(session.focus as CareerFocus)}).
 - Do not use markdown, bullet lists, or stage directions. Plain spoken sentences only.
 - Never invent that you can see their CV unless they describe it.
 - If time is almost up (under 3 minutes), wrap up with encouragement and one final tip.`;
 
-  if (!isInterviewPrep(session)) return base;
+  if (!isInterviewPrep(session)) {
+    return `${base}
+
+For non-interview focuses, still correct weak answers with a clearer sample response before asking the next coaching question.`;
+  }
 
   return `${base}
 
@@ -69,8 +77,8 @@ ${INTERVIEW_PREP_STAR}
 Coaching style for interview prep:
 - Work through the Top 20 in order unless time is short; then pick the highest-value remaining questions.
 - Ask the question in natural spoken wording (you may lightly tailor it to ${session.targetRole || "their target role"}).
-- After each answer: give brief, specific feedback against the strong-answer themes — praise what worked, then one clear improvement (often STAR for experience questions).
-- Do not read sample answers word-for-word as a script. Coach them to sound professional, confident, and natural — not memorised.
+- After EACH answer: 1) brief praise, 2) clear correction, 3) a stronger sample answer they can practise, 4) the next question.
+- Teach them to sound professional, confident, and natural — not memorised.
 - Remind them when useful: ${INTERVIEW_PREP_REMINDERS.join(" ")}
 - For salary questions, keep coaching high-level and encourage market research.
 - Near the end, practise "Do you have any questions for us?" and stress they must never say they have no questions.`;
@@ -81,15 +89,19 @@ function fallbackOpening(session: CareerSession, name: string) {
   const role = session.targetRole || "your target role";
   if (isInterviewPrep(session)) {
     const first = INTERVIEW_PREP_BANK[0];
-    return `Hi ${who}, welcome to your Techly interview preparation session for ${role}. Over the next ${session.durationMinutes} minutes we will practise the most important general interview questions. Answer naturally — I will give short feedback and tips like the STAR method. First question: ${first.question}`;
+    return `Hi ${who}, welcome to your Techly interview preparation session for ${role}. Over the next ${session.durationMinutes} minutes we will practise the most important general interview questions. After each answer I will correct you and show you a stronger way to say it. First question: ${first.question}`;
   }
-  return `Hi ${who}, welcome to your Techly career coaching session. I'm your interview coach for the next ${session.durationMinutes} minutes, focused on ${focusLabel(session.focus)}. Let's start with ${role}: tell me briefly about yourself and why you want this kind of work.`;
+  return `Hi ${who}, welcome to your Techly career coaching session. I'm your interview coach for the next ${session.durationMinutes} minutes, focused on ${focusLabel(session.focus)}. I'll correct your answers as we go so you know how to improve. Let's start with ${role}: tell me briefly about yourself and why you want this kind of work.`;
 }
 
-function fallbackReply(session: CareerSession, answer: string, history: CareerMessage[]) {
+function fallbackReply(
+  session: CareerSession,
+  answer: string,
+  history: CareerMessage[],
+) {
   if (!isInterviewPrep(session)) {
     const snippet = answer.trim().slice(0, 80);
-    return `Thanks for sharing that${snippet ? ` about "${snippet}${answer.trim().length > 80 ? "…" : ""}"` : ""}. That shows useful experience. Can you give a concrete example of a challenge you faced and how you handled it?`;
+    return `Thanks for sharing that${snippet ? ` about "${snippet}${answer.trim().length > 80 ? "…" : ""}"` : ""}. A stronger answer would be more specific: describe the situation, what you did, and the result. Can you try again with a concrete example of a challenge you faced and how you handled it?`;
   }
 
   const coachTexts = history
@@ -103,21 +115,28 @@ function fallbackReply(session: CareerSession, answer: string, history: CareerMe
 
   const current = interviewPrepItemAt(Math.max(0, asked - 1));
   const next = interviewPrepItemAt(asked);
-  const tip =
-    current.id === 8 || current.id === 13
-      ? " For stories like that, use STAR: situation, task, action, and result."
-      : current.tip
-        ? ` ${current.tip}`
-        : " Aim to sound confident and natural, not memorised.";
+  const tip = current.tip ? ` ${current.tip}` : "";
 
-  return `Good effort on that one.${tip} Next: ${next.question}`;
+  return `Good try. Here is a stronger way to answer: ${current.sampleAnswer}${tip} Now practise that idea in your own words for the next question: ${next.question}`;
 }
 
-function fallbackSummary(session: CareerSession) {
-  if (isInterviewPrep(session)) {
-    return `You completed a ${session.durationMinutes}-minute interview preparation session for ${session.targetRole || "your target role"}. Keep practising the Top 20 general interview questions with natural, professional answers — not memorised scripts. Use STAR for experience stories, prepare 3–5 real examples that match your CV, research the company, and always have thoughtful questions ready for the interviewer.`;
+function fallbackSummaryText(session: CareerSession, history: CareerMessage[]) {
+  const review = buildFallbackSessionReview(
+    history,
+    session.targetRole || "your target role",
+  );
+  return serializeCareerReview(review);
+}
+
+function extractJsonObject(text: string) {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start < 0 || end <= start) return null;
+  try {
+    return JSON.parse(text.slice(start, end + 1)) as CareerSessionReview;
+  } catch {
+    return null;
   }
-  return `You completed a ${session.durationMinutes}-minute ${focusLabel(session.focus)} session for ${session.targetRole || "your career goal"}. Keep practising clear stories with Situation, Task, Action, and Result, and prepare two thoughtful questions for the interviewer.`;
 }
 
 async function generateCoachText(input: {
@@ -131,7 +150,7 @@ async function generateCoachText(input: {
     input.mode === "opening"
       ? fallbackOpening(input.session, input.candidateName)
       : input.mode === "summary"
-        ? fallbackSummary(input.session)
+        ? fallbackSummaryText(input.session, input.history)
         : fallbackReply(
             input.session,
             input.candidateAnswer ?? "",
@@ -158,12 +177,23 @@ async function generateCoachText(input: {
     input.mode === "opening"
       ? `Start the session. Greet the candidate and ask your first interview question.${interviewExtra}`
       : input.mode === "summary"
-        ? `The session time is up. Write a short written summary (3–5 sentences) of how they did and 2–3 concrete next steps. This summary is for reading, not speaking.${
-            isInterviewPrep(input.session)
-              ? " Mention the Top 20 practice, STAR, and preparing questions for the interviewer."
-              : ""
-          }\n\nTranscript:\n${transcript || "(no messages)"}`
-        : `The candidate just answered:\n"""${input.candidateAnswer}"""\n\nContinue the mock interview with brief feedback and the next question.${interviewExtra}\n\nTranscript so far:\n${transcript}`;
+        ? `The session is finished. Return ONLY valid JSON (no markdown) matching this shape:
+{"version":1,"score":0,"grade":"","overview":"","corrections":[{"question":"","yourAnswer":"","score":0,"feedback":"","betterAnswer":""}],"nextSteps":[""]}
+Rules for the JSON:
+- score is 0-100 overall interview performance.
+- grade is a short label like Excellent, Strong, Good, Developing, or Needs practice.
+- overview is 2-4 sentences for the candidate to read.
+- corrections: one object per candidate answer you can identify from the transcript; include the question, their answer, a 0-100 score, specific feedback, and a betterAnswer they should practise (professional, natural, not overly long).
+- nextSteps: 3 concrete actions.
+Transcript:
+${transcript || "(no messages)"}`
+        : `The candidate just answered:
+"""${input.candidateAnswer}"""
+
+Correct them clearly, give a stronger sample answer to practise, then ask the next question.${interviewExtra}
+
+Transcript so far:
+${transcript}`;
 
   try {
     const { text } = await generateText({
@@ -171,7 +201,27 @@ async function generateCoachText(input: {
       system: systemPrompt(input.session, input.candidateName),
       prompt: userPrompt,
     });
-    return text.trim() || fallback;
+    const trimmed = text.trim();
+    if (!trimmed) return fallback;
+
+    if (input.mode === "summary") {
+      const parsed = extractJsonObject(trimmed);
+      if (parsed?.version === 1 && typeof parsed.score === "number") {
+        return serializeCareerReview({
+          version: 1,
+          score: Math.max(0, Math.min(100, Math.round(parsed.score))),
+          grade: parsed.grade || "Good",
+          overview: parsed.overview || "",
+          corrections: Array.isArray(parsed.corrections)
+            ? parsed.corrections
+            : [],
+          nextSteps: Array.isArray(parsed.nextSteps) ? parsed.nextSteps : [],
+        });
+      }
+      return fallback;
+    }
+
+    return trimmed;
   } catch {
     return fallback;
   }
