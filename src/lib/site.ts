@@ -330,10 +330,23 @@ export const cctvCameraTypes: {
   {
     name: "IP network cameras",
     description:
-      "High-resolution cameras that run on your network for clear daytime and night footage, remote viewing and expandable multi-camera setups for offices, shops and warehouses.",
-    image:
-      "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=1200&q=80",
-    imageAlt: "IP network security camera mounted on a building",
+      "Complete IP camera kits with recorder, cabling and hard drive — from compact 4-camera setups to 8 and 16-camera systems for offices, shops and warehouses. Clear daytime and night footage with remote viewing on your phone.",
+    image: "/cctv/ip-kit-16.png",
+    imageAlt: "16-camera IP network CCTV kit with recorder and accessories",
+    gallery: [
+      {
+        src: "/cctv/ip-kit-16.png",
+        alt: "16-camera IP CCTV kit with NVR, cable and hard drive",
+      },
+      {
+        src: "/cctv/ip-kit-8.jpg",
+        alt: "8-camera Hikvision IP CCTV kit with recorder and power supply",
+      },
+      {
+        src: "/cctv/ip-kit-4.jpg",
+        alt: "4-camera CCTV kit with DVR, cables and power adapter",
+      },
+    ],
   },
 ];
 
