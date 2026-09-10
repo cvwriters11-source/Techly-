@@ -330,7 +330,7 @@ export const cctvCameraTypes: {
   {
     name: "IP network cameras",
     description:
-      "Complete IP camera kits with recorder, cabling and hard drive — from compact 4-camera setups to 8 and 16-camera systems for offices, shops and warehouses. Clear daytime and night footage with remote viewing on your phone.",
+      "Hikvision-style IP camera kits with bullet cameras, NVR recorder, surveillance hard drive, network cable and power supply. Available as 4, 8 or 16 camera packages — night vision, remote viewing on your phone, and a full install for offices, shops, warehouses and homes.",
     image: "/cctv/ip-kit-16.png",
     imageAlt: "16-camera IP network CCTV kit with recorder and accessories",
     gallery: [
