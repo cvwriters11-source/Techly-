@@ -234,11 +234,16 @@ function RequestReceivedPopup({
 
 export function ContactForm({
   defaultService,
+  defaultCamera,
 }: {
   defaultService?: string;
+  defaultCamera?: string;
 }) {
   const [state, action, pending] = useActionState(submitContact, initial);
   const [popupOpen, setPopupOpen] = useState(false);
+  const cameraPrefill = defaultCamera
+    ? `I want a quotation for ${defaultCamera}.\n\n`
+    : "";
 
   useEffect(() => {
     if (state.ok) setPopupOpen(true);
@@ -267,6 +272,16 @@ export function ContactForm({
         <p className="rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-200">
           {state.message}
         </p>
+      ) : null}
+
+      {defaultCamera ? (
+        <div className="rounded-2xl border border-accent/35 bg-accent/10 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
+            Camera type
+          </p>
+          <p className="mt-1 text-sm font-medium text-white">{defaultCamera}</p>
+          <input type="hidden" name="camera" value={defaultCamera} />
+        </div>
       ) : null}
 
       <FormDropdown
@@ -332,6 +347,7 @@ export function ContactForm({
           className={`${inputClass} min-h-32 resize-y`}
           name="description"
           required
+          defaultValue={cameraPrefill}
           placeholder="What are you trying to build, fix or automate?"
         />
       </Field>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { ContactForm } from "@/components/contact-form";
 import { Container, Section, SectionHeading } from "@/components/ui/section";
-import { serviceOptions, site } from "@/lib/site";
+import { cctvCameraTypes, serviceOptions, site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -44,10 +44,13 @@ const details = [
 export default async function ContactPage({
   searchParams,
 }: {
-  searchParams: Promise<{ service?: string }>;
+  searchParams: Promise<{ service?: string; camera?: string }>;
 }) {
-  const { service } = await searchParams;
+  const { service, camera } = await searchParams;
   const defaultService = serviceOptions.find((option) => option === service);
+  const defaultCamera = cctvCameraTypes.find(
+    (item) => item.name === camera,
+  )?.name;
 
   return (
     <Section className="pb-28 pt-16">
@@ -62,7 +65,10 @@ export default async function ContactPage({
           id="consult"
           className="mt-10 rounded-[1.8rem] border border-white/12 bg-[#0c0c0c] p-5 sm:p-8"
         >
-          <ContactForm defaultService={defaultService} />
+          <ContactForm
+            defaultService={defaultService}
+            defaultCamera={defaultCamera}
+          />
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

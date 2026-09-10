@@ -24,7 +24,11 @@ export default function ServicesPage() {
                 {serviceCategories.map((category) => (
                   <Link
                     key={category.href}
-                    href={contactServiceHref(category.title)}
+                    href={
+                      category.slug === "cctv-installations"
+                        ? category.href
+                        : contactServiceHref(category.title)
+                    }
                     className="whitespace-nowrap rounded-full border border-white/20 bg-white/5 px-3.5 py-1.5 text-[13px] font-medium text-white transition hover:border-accent/70 hover:bg-white/10 md:text-sm"
                   >
                     {category.title}

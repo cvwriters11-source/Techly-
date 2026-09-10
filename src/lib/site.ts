@@ -274,10 +274,11 @@ export const serviceCategories = [
     summary:
       "Professional CCTV camera installations for offices, warehouses, retail and homes — so you can see what is happening on site, on your phone or at your desk.",
     description:
-      "We supply, install and maintain CCTV systems with remote viewing, night vision and the cabling done properly — not a DIY kit left half-finished.",
+      "We supply, install and maintain CCTV systems with remote viewing, night vision and the cabling done properly — not a DIY kit left half-finished. Browse the camera types below, including TPZ solar cameras.",
     items: [
       "CCTV camera installations",
       "IP and analogue camera systems",
+      "TPZ solar cameras",
       "DVR / NVR setup and recording",
       "Remote viewing on phone and desktop",
       "Indoor, outdoor and night-vision cameras",
@@ -287,6 +288,54 @@ export const serviceCategories = [
     ],
   },
 ] as const;
+
+/** Camera types shown on the CCTV service page. */
+export const cctvCameraTypes: {
+  name: string;
+  description: string;
+  image: string;
+  imageAlt: string;
+  gallery?: { src: string; alt: string }[];
+}[] = [
+  {
+    name: "TPZ solar cameras",
+    description:
+      "Pan, tilt and zoom cameras powered by solar — ideal for remote gates, farms, construction sites and places with no easy power. Battery backup keeps recording when the sun is down, with optional 4G or Wi‑Fi viewing on your phone.",
+    image: "/cctv/tpz-solar-product.jpg",
+    imageAlt:
+      "Multi-lens TPZ solar security camera with panoramic array, PTZ head and solar panel",
+    gallery: [
+      {
+        src: "/cctv/tpz-solar-product.jpg",
+        alt: "TPZ solar camera product view with triple lens and PTZ",
+      },
+      {
+        src: "/cctv/tpz-solar-installed.jpg",
+        alt: "TPZ solar camera installed under a roof eave at sunset",
+      },
+      {
+        src: "/cctv/tpz-solar-night.jpg",
+        alt: "TPZ solar camera at night with floodlights on",
+      },
+      {
+        src: "/cctv/tpz-solar-features.jpg",
+        alt: "TPZ solar 4G camera features including pan, tilt and weatherproof rating",
+      },
+      {
+        src: "/cctv/tpz-solar-usecases.jpg",
+        alt: "TPZ solar camera use cases for deliveries, intruders and vehicles",
+      },
+    ],
+  },
+  {
+    name: "IP network cameras",
+    description:
+      "High-resolution cameras that run on your network for clear daytime and night footage, remote viewing and expandable multi-camera setups for offices, shops and warehouses.",
+    image:
+      "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=1200&q=80",
+    imageAlt: "IP network security camera mounted on a building",
+  },
+];
 
 export const steps = [
   {
@@ -346,6 +395,15 @@ export const serviceOptions = [
 
 export function contactServiceHref(service: string) {
   return `/contact?service=${encodeURIComponent(service)}#consult`;
+}
+
+/** Quote request for a specific CCTV camera type (shown in admin contact detail). */
+export function contactCameraHref(cameraType: string) {
+  const params = new URLSearchParams({
+    service: "CCTV Camera Installations",
+    camera: cameraType,
+  });
+  return `/contact?${params.toString()}#consult`;
 }
 
 export const ticketClientTypes = [

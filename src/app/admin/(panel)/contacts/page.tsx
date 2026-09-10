@@ -96,6 +96,9 @@ export default async function AdminContactsPage({
                 <p className="mt-3 text-sm leading-snug break-words text-white/75">
                   {contact.service}
                 </p>
+                <p className="mt-1 line-clamp-2 text-sm leading-snug break-words text-white/55">
+                  {contact.description}
+                </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <StatusBadge
                     label={contact.budget}

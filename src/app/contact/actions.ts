@@ -5,6 +5,7 @@ import { notifyAdminInbox } from "@/lib/email";
 import { saveContact } from "@/lib/inbox/store";
 import {
   budgetRanges,
+  cctvCameraTypes,
   contactMethods,
   serviceOptions,
 } from "@/lib/site";
@@ -31,7 +32,14 @@ export async function submitContact(
   const email = String(formData.get("email") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const service = String(formData.get("service") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
+  const camera = String(formData.get("camera") ?? "").trim();
+  const descriptionRaw = String(formData.get("description") ?? "").trim();
+  const knownCamera = cctvCameraTypes.find((item) => item.name === camera)?.name;
+  const description = knownCamera
+    ? descriptionRaw.toLowerCase().includes(knownCamera.toLowerCase())
+      ? descriptionRaw
+      : `Camera type requested: ${knownCamera}\n\n${descriptionRaw}`
+    : descriptionRaw;
   const budget = String(formData.get("budget") ?? "").trim();
   const contactMethod = String(formData.get("contactMethod") ?? "").trim();
 
@@ -83,7 +91,9 @@ export async function submitContact(
         company: contact.company,
         email: contact.email,
         phone: contact.phone,
-        summary: contact.service,
+        summary: knownCamera
+          ? `${contact.service} — ${knownCamera}`
+          : contact.service,
         details: contact.description,
       });
     } catch {
