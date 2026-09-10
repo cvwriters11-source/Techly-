@@ -300,7 +300,7 @@ export const cctvCameraTypes: {
   {
     name: "TPZ solar cameras",
     description:
-      "Pan, tilt and zoom cameras powered by solar — ideal for remote gates, farms, construction sites and places with no easy power. Battery backup keeps recording when the sun is down, with optional 4G or Wi‑Fi viewing on your phone.",
+      "All-in-one solar security cameras with a panoramic multi-lens array plus a pan-tilt-zoom head, built-in floodlights and night vision. Powered by the solar panel and battery — no mains cable needed — with 4G or Wi‑Fi viewing on your phone. Ideal for remote gates, farms, construction sites and places with no easy power.",
     image: "/cctv/tpz-solar-product.jpg",
     imageAlt:
       "Multi-lens TPZ solar security camera with panoramic array, PTZ head and solar panel",
