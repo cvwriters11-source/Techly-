@@ -5,6 +5,7 @@ import { notifyAdminInbox } from "@/lib/email";
 import { saveContact } from "@/lib/inbox/store";
 import {
   budgetRanges,
+  cameraConnectivityOptions,
   cctvCameraTypes,
   contactMethods,
   serviceOptions,
@@ -33,13 +34,22 @@ export async function submitContact(
   const phone = String(formData.get("phone") ?? "").trim();
   const service = String(formData.get("service") ?? "").trim();
   const camera = String(formData.get("camera") ?? "").trim();
+  const cameraConnectivity = String(
+    formData.get("cameraConnectivity") ?? "",
+  ).trim();
   const descriptionRaw = String(formData.get("description") ?? "").trim();
   const knownCamera = cctvCameraTypes.find((item) => item.name === camera)?.name;
-  const description = knownCamera
-    ? descriptionRaw.toLowerCase().includes(knownCamera.toLowerCase())
-      ? descriptionRaw
-      : `Camera type requested: ${knownCamera}\n\n${descriptionRaw}`
-    : descriptionRaw;
+  const needsConnectivity =
+    Boolean(knownCamera) || service === "CCTV Camera Installations";
+  const knownConnectivity = cameraConnectivityOptions.find(
+    (option) => option === cameraConnectivity,
+  );
+  const descriptionParts = [
+    knownCamera ? `Camera type requested: ${knownCamera}` : "",
+    knownConnectivity ? `Connectivity: ${knownConnectivity}` : "",
+    descriptionRaw,
+  ].filter(Boolean);
+  const description = descriptionParts.join("\n\n");
   const budget = String(formData.get("budget") ?? "").trim();
   const contactMethod = String(formData.get("contactMethod") ?? "").trim();
 
@@ -54,7 +64,11 @@ export async function submitContact(
   if (!isIn(service, serviceOptions)) {
     fieldErrors.service = "Please select a service.";
   }
-  if (description.length < 12) {
+  if (needsConnectivity && !knownConnectivity) {
+    fieldErrors.cameraConnectivity =
+      "Please choose Wi‑Fi or SIM card (4G) camera.";
+  }
+  if (descriptionRaw.length < 12) {
     fieldErrors.description = "Please tell us a little more about the project.";
   }
   if (!isIn(budget, budgetRanges)) {
@@ -84,6 +98,11 @@ export async function submitContact(
       contactMethod,
     });
     try {
+      const summaryParts = [
+        contact.service,
+        knownCamera,
+        knownConnectivity,
+      ].filter(Boolean);
       await notifyAdminInbox({
         kind: "contact",
         recordId: contact.id,
@@ -91,9 +110,7 @@ export async function submitContact(
         company: contact.company,
         email: contact.email,
         phone: contact.phone,
-        summary: knownCamera
-          ? `${contact.service} — ${knownCamera}`
-          : contact.service,
+        summary: summaryParts.join(" — "),
         details: contact.description,
       });
     } catch {

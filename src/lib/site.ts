@@ -398,6 +398,11 @@ export const budgetRanges = [
 
 export const contactMethods = ["Email", "Phone", "WhatsApp"] as const;
 
+export const cameraConnectivityOptions = [
+  "Wi‑Fi camera",
+  "SIM card (4G) camera",
+] as const;
+
 export const serviceOptions = [
   "Software Development",
   "IT Support",

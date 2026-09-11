@@ -9,6 +9,7 @@ import { submitContact, type ContactState } from "@/app/contact/actions";
 import { cn } from "@/lib/utils";
 import {
   budgetRanges,
+  cameraConnectivityOptions,
   contactMethods,
   serviceOptions,
 } from "@/lib/site";
@@ -86,6 +87,7 @@ function FormDropdown({
   defaultValue = "",
   startOpen = false,
   error,
+  onChange,
 }: {
   label: string;
   name: string;
@@ -94,6 +96,7 @@ function FormDropdown({
   defaultValue?: string;
   startOpen?: boolean;
   error?: string;
+  onChange?: (value: string) => void;
 }) {
   const [open, setOpen] = useState(startOpen);
   const [value, setValue] = useState(defaultValue);
@@ -136,6 +139,7 @@ function FormDropdown({
                 aria-selected={value === option}
                 onClick={() => {
                   setValue(option);
+                  onChange?.(option);
                   setOpen(false);
                 }}
                 className={cn(
@@ -241,6 +245,9 @@ export function ContactForm({
 }) {
   const [state, action, pending] = useActionState(submitContact, initial);
   const [popupOpen, setPopupOpen] = useState(false);
+  const [service, setService] = useState(defaultService ?? "");
+  const showConnectivity =
+    Boolean(defaultCamera) || service === "CCTV Camera Installations";
   const cameraPrefill = defaultCamera
     ? `I want a quotation for ${defaultCamera}.\n\n`
     : "";
@@ -292,7 +299,18 @@ export function ContactForm({
         defaultValue={defaultService}
         startOpen={Boolean(defaultService)}
         error={state.fieldErrors?.service}
+        onChange={setService}
       />
+
+      {showConnectivity ? (
+        <ChoiceGroup
+          legend="Do you want a Wi‑Fi camera or a SIM card camera?"
+          name="cameraConnectivity"
+          options={cameraConnectivityOptions}
+          error={state.fieldErrors?.cameraConnectivity}
+          columns="sm:grid-cols-2"
+        />
+      ) : null}
 
       <FormDropdown
         label="Budget range"
