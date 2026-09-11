@@ -11,6 +11,7 @@ import {
 import {
   sendClientUpdateEmail,
   sendContactCampaignEmail,
+  sendMarketingBlastEmail,
   sendPaymentThankYouEmail,
 } from "@/lib/email";
 import {
@@ -26,11 +27,19 @@ import {
   type InvoiceDetails,
 } from "@/lib/inbox/invoice";
 import {
+  getMarketingTemplate,
+  isMarketingAudience,
+  isMarketingTemplateId,
+} from "@/lib/inbox/marketing-templates";
+import {
   contactStatuses,
   deleteContact,
   getContact,
   getTicket,
+  isFollowUpContactStatus,
+  isOpenContactStatus,
   isPaidContactStatus,
+  listInbox,
   ticketStatuses,
   updateContact,
   updateTicket,
@@ -398,6 +407,90 @@ export async function sendContactCampaignAction(formData: FormData) {
   }
 
   redirect(`/admin/contacts?view=${view}&campaign=1`);
+}
+
+export async function sendBulkMarketingAction(formData: FormData) {
+  await requireAdmin();
+
+  const audienceRaw = String(formData.get("audience") ?? "all").trim();
+  const templateRaw = String(formData.get("templateId") ?? "").trim();
+  const audience = isMarketingAudience(audienceRaw) ? audienceRaw : "all";
+  if (!isMarketingTemplateId(templateRaw)) {
+    redirect(`/admin/contacts?view=marketing&audience=${audience}&blast=invalid`);
+  }
+
+  const template = getMarketingTemplate(templateRaw);
+  if (!template) {
+    redirect(`/admin/contacts?view=marketing&audience=${audience}&blast=invalid`);
+  }
+
+  const { contacts, tickets } = await listInbox();
+  const byEmail = new Map<string, { email: string; name: string }>();
+
+  const includeContact =
+    audience === "all"
+      ? () => true
+      : audience === "paid"
+        ? isPaidContactStatus
+        : audience === "followup"
+          ? isFollowUpContactStatus
+          : isOpenContactStatus;
+
+  for (const contact of contacts) {
+    const email = contact.email.trim();
+    if (!email || !includeContact(contact.status)) continue;
+    const key = email.toLowerCase();
+    if (!byEmail.has(key)) {
+      byEmail.set(key, {
+        email,
+        name: contact.name.trim() || contact.company.trim() || "there",
+      });
+    }
+  }
+
+  if (audience === "all") {
+    for (const ticket of tickets) {
+      const email = ticket.email.trim();
+      if (!email) continue;
+      const key = email.toLowerCase();
+      if (byEmail.has(key)) continue;
+      byEmail.set(key, {
+        email,
+        name: ticket.name.trim() || ticket.company.trim() || "there",
+      });
+    }
+  }
+
+  const recipients = [...byEmail.values()];
+  if (recipients.length === 0) {
+    redirect(
+      `/admin/contacts?view=marketing&audience=${audience}&blast=empty`,
+    );
+  }
+
+  let sent = 0;
+  let failed = 0;
+  for (const recipient of recipients) {
+    const result = await sendMarketingBlastEmail({
+      to: recipient.email,
+      name: recipient.name,
+      subject: template.subject,
+      heading: template.heading,
+      body: template.body,
+    });
+    if (result.ok) sent += 1;
+    else failed += 1;
+  }
+
+  if (sent === 0) {
+    redirect(
+      `/admin/contacts?view=marketing&audience=${audience}&blast=failed`,
+    );
+  }
+
+  redirect(
+    `/admin/contacts?view=marketing&audience=${audience}&blast=1&sent=${sent}&failed=${failed}`,
+  );
 }
 
 export async function markInvoicePayment(

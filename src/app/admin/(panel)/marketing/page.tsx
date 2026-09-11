@@ -41,7 +41,7 @@ export default async function AdminMarketingPage() {
           Business marketing
         </p>
         <h1 className="mt-2 text-3xl font-semibold text-white">Companies</h1>
-        <p className="mt-2 text-sm text-white/60">
+        <p className="mt-2 text-sm text-white/55">
           Registered marketing accounts. Email verification unlocks the
           dashboard — no separate admin approval step.
         </p>

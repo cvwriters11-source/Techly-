@@ -19,7 +19,7 @@ export default async function AdminProjectsPage() {
           Our Profile
         </p>
         <h1 className="mt-2 text-3xl font-semibold text-white">Projects</h1>
-        <p className="mt-2 max-w-2xl text-sm text-white/60">
+        <p className="mt-2 max-w-2xl text-sm text-white/55">
           Add live links for work you have completed. They appear on the public
           site under Our Profile.
         </p>
@@ -42,7 +42,7 @@ export default async function AdminProjectsPage() {
               <p className="font-medium break-words text-white">{project.title}</p>
               <p className="mt-1 text-sm break-all text-accent/90">{project.url}</p>
               {project.summary ? (
-                <p className="mt-2 text-sm leading-snug break-words text-white/65">
+                <p className="mt-2 text-sm leading-snug break-words text-white/70">
                   {project.summary}
                 </p>
               ) : null}

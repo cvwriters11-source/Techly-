@@ -29,7 +29,7 @@ export default async function AdminProjectDetailPage({
           ← All projects
         </Link>
         <h1 className="mt-3 text-3xl font-semibold text-white">{project.title}</h1>
-        <p className="mt-2 text-sm break-all text-white/50">{project.id}</p>
+        <p className="mt-2 text-sm break-all text-white/55">{project.id}</p>
       </div>
 
       <ProjectForm

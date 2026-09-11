@@ -25,7 +25,7 @@ export default async function AdminInvoicesPage({
           Invoice file
         </p>
         <h1 className="mt-2 text-3xl font-semibold text-white">Invoices</h1>
-        <p className="mt-2 text-sm text-white/60">
+        <p className="mt-2 text-sm text-white/55">
           Every emailed invoice stays here, including work that has left the
           open ticket and contact lists. Search by invoice number to open it.
         </p>
@@ -38,7 +38,7 @@ export default async function AdminInvoicesPage({
             name="q"
             defaultValue={q}
             placeholder="Search invoice number, e.g. INV-TECHLYPC-006"
-            className="w-full rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-white/35 focus:border-accent/50"
+            className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-white/35 focus:border-accent/50"
           />
         </label>
         <button
@@ -77,7 +77,7 @@ export default async function AdminInvoicesPage({
                   </div>
                   <StatusBadge
                     label={row.source === "ticket" ? "Ticket" : "Contact"}
-                    className="border-white/12 bg-white/5 text-white/80"
+                    className="border-white/12 bg-white/5 text-white/75"
                   />
                 </div>
                 <p className="mt-3 text-sm text-accent">

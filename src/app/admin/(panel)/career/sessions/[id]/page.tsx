@@ -40,7 +40,7 @@ export default async function AdminCareerSessionPage({
         <h1 className="mt-3 text-3xl font-semibold text-white">
           {profile?.name || "Candidate"} session
         </h1>
-        <p className="mt-2 text-sm text-white/60">
+        <p className="mt-2 text-sm text-white/55">
           {profile?.email || "No email"} · {session.targetRole || "No role"} ·{" "}
           {focusLabel(session.focus)} · {session.voice} · {session.durationMinutes}{" "}
           min · {session.status}
@@ -72,7 +72,7 @@ export default async function AdminCareerSessionPage({
 
       <div className="rounded-[1.4rem] border border-white/12 bg-[#0c0c0c] p-5">
         <h2 className="text-lg font-semibold text-white">Full conversation</h2>
-        <p className="mt-1 text-sm text-white/50">
+        <p className="mt-1 text-sm text-white/55">
           Read every line and press Listen to hear coach or candidate audio.
         </p>
         <div className="mt-5 space-y-4">
@@ -84,8 +84,8 @@ export default async function AdminCareerSessionPage({
                 key={message.id}
                 className={
                   message.role === "coach"
-                    ? "rounded-2xl border border-accent/20 bg-accent/10 px-4 py-3"
-                    : "rounded-2xl border border-white/12 bg-white/5 px-4 py-3"
+                    ? "rounded-[1.4rem] border border-accent/20 bg-accent/10 px-4 py-3"
+                    : "rounded-[1.4rem] border border-white/12 bg-black/40 px-4 py-3"
                 }
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">

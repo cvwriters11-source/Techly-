@@ -21,7 +21,7 @@ import { site } from "@/lib/site";
 const initial: RecordUpdateState = { ok: false, message: "" };
 
 const fieldClass =
-  "w-full rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-white/35 focus:border-accent/50";
+  "w-full rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-white/35 focus:border-accent/50";
 
 function emptyLine(): InvoiceLine {
   return { description: "", quantity: 1, unitPrice: 0 };
@@ -77,7 +77,7 @@ function EmailSentPopup({
           >
             Email sent
           </h2>
-          <p className="mt-6 text-lg leading-relaxed text-white/80">{message}</p>
+          <p className="mt-6 text-lg leading-relaxed text-white/75">{message}</p>
           {invoiceNumber ? (
             <p className="mt-5 text-sm text-white/55">
               Find it later in Invoice file with{" "}
@@ -89,7 +89,7 @@ function EmailSentPopup({
           {invoiceNumber ? (
             <Link
               href={`/admin/invoices?q=${encodeURIComponent(invoiceNumber)}`}
-              className="inline-flex items-center justify-center rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-white hover:border-white/40"
+              className="inline-flex items-center justify-center rounded-full border border-white/12 px-5 py-3 text-sm font-semibold text-white hover:border-white/30"
             >
               Open invoice file
             </Link>
@@ -245,7 +245,7 @@ export function RecordUpdateForm({
         ) : null}
       </label>
 
-      <div className="space-y-4 border-t border-white/10 pt-4">
+      <div className="space-y-4 border-t border-white/12 pt-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
             Invoice
@@ -271,7 +271,7 @@ export function RecordUpdateForm({
           {items.map((line, index) => (
             <div
               key={index}
-              className="grid gap-2 rounded-2xl border border-white/10 p-3 sm:grid-cols-[1fr_5.5rem_7rem_6rem_auto]"
+              className="grid gap-2 rounded-[1.4rem] border border-white/12 p-3 sm:grid-cols-[1fr_5.5rem_7rem_6rem_auto]"
             >
               <label className="block sm:col-span-1">
                 <span className="mb-1 block text-xs text-white/55">Item</span>
@@ -318,7 +318,7 @@ export function RecordUpdateForm({
               </label>
               <div>
                 <span className="mb-1 block text-xs text-white/55">Line total</span>
-                <p className="rounded-xl border border-white/10 px-3 py-2.5 text-sm text-accent">
+                <p className="rounded-xl border border-white/12 px-3 py-2.5 text-sm text-accent">
                   {formatZar(line.quantity * line.unitPrice)}
                 </p>
               </div>
@@ -388,7 +388,7 @@ export function RecordUpdateForm({
           ))}
         </ul>
 
-        <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-white/80">
+        <div className="rounded-[1.4rem] border border-white/12 bg-white/5 p-4 text-sm text-white/75">
           <p className="flex justify-between gap-4">
             <span>Items</span>
             <span>{formatZar(totals.itemsTotal)}</span>

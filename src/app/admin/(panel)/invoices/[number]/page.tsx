@@ -39,10 +39,10 @@ export default async function AdminInvoiceDetailPage({
           </h1>
           <StatusBadge
             label={row.source === "ticket" ? "Ticket" : "Contact"}
-            className="border-white/12 bg-white/5 text-white/80"
+            className="border-white/12 bg-white/5 text-white/75"
           />
         </div>
-        <p className="mt-2 text-sm text-white/50">
+        <p className="mt-2 text-sm text-white/55">
           {row.invoice.sentAt
             ? `Emailed ${formatDateTime(row.invoice.sentAt)}`
             : "Saved in the invoice file"}
@@ -99,7 +99,7 @@ export default async function AdminInvoiceDetailPage({
             ))}
           </div>
         )}
-        <div className="space-y-2 border-t border-white/8 px-5 py-4 text-sm text-white/80">
+        <div className="space-y-2 border-t border-white/8 px-5 py-4 text-sm text-white/75">
           <p className="flex justify-between gap-4">
             <span>Items</span>
             <span>{formatZar(totals.itemsTotal)}</span>

@@ -8,7 +8,7 @@ import type { ProjectRecord } from "@/lib/projects/store";
 const initial: ProjectFormState = { ok: false, message: "" };
 
 const fieldClass =
-  "w-full rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-white/35 focus:border-accent/50";
+  "w-full rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-white/35 focus:border-accent/50";
 
 export function ProjectForm({
   action,

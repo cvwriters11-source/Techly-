@@ -39,7 +39,7 @@ export default async function AdminCareerPage() {
         <h1 className="mt-2 text-3xl font-semibold text-white">
           Conversations
         </h1>
-        <p className="mt-2 text-sm text-white/60">
+        <p className="mt-2 text-sm text-white/55">
           Every coach and candidate exchange is saved here so you can read and
           listen to the session.
         </p>

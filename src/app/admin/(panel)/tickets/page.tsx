@@ -31,7 +31,7 @@ export default async function AdminTicketsPage({
           Log a Ticket
         </p>
         <h1 className="mt-2 text-3xl font-semibold text-white">Tickets</h1>
-        <p className="mt-2 text-sm text-white/60">
+        <p className="mt-2 text-sm text-white/55">
           Open tickets from the site. Resolved tickets leave this list after
           the client is emailed.
         </p>

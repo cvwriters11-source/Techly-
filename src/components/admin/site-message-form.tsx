@@ -8,7 +8,7 @@ import type { SiteMessage } from "@/lib/site-messages/store";
 const initial: SiteMessageFormState = { ok: false, message: "" };
 
 const fieldClass =
-  "w-full rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-white/35 focus:border-accent/50";
+  "w-full rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-white/35 focus:border-accent/50";
 
 export function SiteMessageForm({
   action,
@@ -53,7 +53,7 @@ export function SiteMessageForm({
           ).map(([value, label]) => (
             <label
               key={value}
-              className="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/15 bg-[#0c0c0c] px-4 py-3 text-sm text-white has-checked:border-accent has-checked:bg-accent/10"
+              className="flex cursor-pointer items-center gap-3 rounded-[1.4rem] border border-white/12 bg-[#0c0c0c] px-4 py-3 text-sm text-white has-checked:border-accent has-checked:bg-accent/10"
             >
               <input
                 type="radio"

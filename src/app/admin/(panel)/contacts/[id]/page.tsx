@@ -42,7 +42,7 @@ export default async function AdminContactDetailPage({
             className={statusTone(contact.status)}
           />
         </div>
-        <p className="mt-2 text-sm text-white/50">
+        <p className="mt-2 text-sm text-white/55">
           Order number {formatOrderNumber(contact.id)}
         </p>
       </div>

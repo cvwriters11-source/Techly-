@@ -186,11 +186,11 @@ export function AdminInboxAlerts() {
   const volumePercent = Math.round(volume * 100);
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
       <button
         type="button"
         onClick={() => void enableAlerts()}
-        className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-white/15 px-2.5 py-1.5 text-sm text-white/80 transition hover:border-white/30 hover:text-white sm:px-3"
+        className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/15 px-2 py-1.5 text-sm text-white/80 transition hover:border-white/30 hover:text-white sm:gap-2 sm:px-3"
         aria-pressed={enabled}
         title={
           enabled
@@ -203,12 +203,12 @@ export function AdminInboxAlerts() {
         ) : (
           <BellOff className="size-4 shrink-0" />
         )}
-        <span className="hidden min-[480px]:inline">
+        <span className="hidden min-[420px]:inline">
           {enabled ? "Alerts on" : "Enable alerts"}
         </span>
       </button>
       <label
-        className="flex items-center gap-1.5 text-white/70"
+        className="flex min-w-0 items-center gap-1 text-white/70 sm:gap-1.5"
         title={`Alert volume ${volumePercent}%`}
       >
         <Volume2 className="size-4 shrink-0" />
@@ -220,7 +220,7 @@ export function AdminInboxAlerts() {
           value={volumePercent}
           aria-label="Alert volume"
           onChange={(event) => changeVolume(Number(event.target.value) / 100)}
-          className="h-1 w-14 cursor-pointer accent-[#12c8b0] sm:w-20"
+          className="h-1 w-12 max-w-full cursor-pointer accent-[#12c8b0] sm:w-20"
         />
         <span className="hidden w-8 text-xs tabular-nums sm:inline">
           {volumePercent}%

@@ -15,7 +15,7 @@ export default async function AdminLoginPage({
   const nextPath = from?.startsWith("/admin") ? from : "/admin";
 
   return (
-    <div className="flex flex-1 items-center justify-center px-5 py-16">
+    <div className="flex min-h-full flex-1 items-center justify-center bg-black px-5 py-16">
       <div className="w-full max-w-md rounded-[1.8rem] border border-white/12 bg-[#0c0c0c] p-6 sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
           Techly Admin

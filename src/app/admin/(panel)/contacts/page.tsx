@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   deleteContactAction,
+  sendBulkMarketingAction,
   sendContactCampaignAction,
 } from "@/app/admin/actions";
 import { StatusBadge } from "@/components/admin/detail-list";
 import { ConfirmDeleteForm } from "@/components/admin/confirm-delete-form";
+import { BulkMarketingForm } from "@/components/admin/bulk-marketing-form";
 import {
   contactStatusLabel,
   formatDateTime,
@@ -13,11 +15,16 @@ import {
   statusTone,
 } from "@/lib/inbox/format";
 import {
+  isMarketingAudience,
+  type MarketingAudience,
+} from "@/lib/inbox/marketing-templates";
+import {
   isFollowUpContactStatus,
   isOpenContactStatus,
   isPaidContactStatus,
   listInbox,
   type ContactRecord,
+  type TicketRecord,
 } from "@/lib/inbox/store";
 
 export const metadata: Metadata = {
@@ -25,7 +32,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type ContactView = "open" | "paid" | "followup";
+type ContactView = "open" | "paid" | "followup" | "marketing";
+
+type MarketingRecipient = {
+  email: string;
+  name: string;
+  company: string;
+  sources: string[];
+};
 
 function ContactRow({
   contact,
@@ -59,7 +73,7 @@ function ContactRow({
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <StatusBadge
             label={contact.budget}
-            className="border-white/12 bg-white/5 text-white/80"
+            className="border-white/12 bg-white/5 text-white/75"
           />
           <span className="text-xs text-white/45">
             {formatDateTime(contact.createdAt)}
@@ -95,6 +109,72 @@ function ContactRow({
   );
 }
 
+function contactSourceLabel(status: ContactRecord["status"]) {
+  if (isPaidContactStatus(status)) return "Paid client";
+  if (isFollowUpContactStatus(status)) return "Follow-up lead";
+  return "Open request";
+}
+
+function collectMarketingRecipients(
+  contacts: ContactRecord[],
+  tickets: TicketRecord[],
+  audience: MarketingAudience,
+): MarketingRecipient[] {
+  const byEmail = new Map<string, MarketingRecipient>();
+
+  const includeContact =
+    audience === "all"
+      ? () => true
+      : audience === "paid"
+        ? isPaidContactStatus
+        : audience === "followup"
+          ? isFollowUpContactStatus
+          : isOpenContactStatus;
+
+  for (const contact of contacts) {
+    const email = contact.email.trim();
+    if (!email || !includeContact(contact.status)) continue;
+    const key = email.toLowerCase();
+    const existing = byEmail.get(key);
+    const source = contactSourceLabel(contact.status);
+    if (existing) {
+      if (!existing.sources.includes(source)) existing.sources.push(source);
+      continue;
+    }
+    byEmail.set(key, {
+      email,
+      name: contact.name.trim(),
+      company: contact.company.trim(),
+      sources: [source],
+    });
+  }
+
+  if (audience === "all") {
+    for (const ticket of tickets) {
+      const email = ticket.email.trim();
+      if (!email) continue;
+      const key = email.toLowerCase();
+      const existing = byEmail.get(key);
+      if (existing) {
+        if (!existing.sources.includes("Support ticket")) {
+          existing.sources.push("Support ticket");
+        }
+        continue;
+      }
+      byEmail.set(key, {
+        email,
+        name: ticket.name.trim(),
+        company: ticket.company.trim(),
+        sources: ["Support ticket"],
+      });
+    }
+  }
+
+  return [...byEmail.values()].sort((a, b) =>
+    a.email.localeCompare(b.email, undefined, { sensitivity: "base" }),
+  );
+}
+
 export default async function AdminContactsPage({
   searchParams,
 }: {
@@ -104,12 +184,34 @@ export default async function AdminContactsPage({
     deleted?: string;
     view?: string;
     campaign?: string;
+    audience?: string;
+    blast?: string;
+    sent?: string;
+    failed?: string;
   }>;
 }) {
-  const { closed, email, deleted, view: viewRaw, campaign } = await searchParams;
+  const {
+    closed,
+    email,
+    deleted,
+    view: viewRaw,
+    campaign,
+    audience: audienceRaw,
+    blast,
+    sent,
+    failed,
+  } = await searchParams;
   const view: ContactView =
-    viewRaw === "paid" || viewRaw === "followup" ? viewRaw : "open";
-  const { contacts } = await listInbox();
+    viewRaw === "paid" ||
+    viewRaw === "followup" ||
+    viewRaw === "marketing"
+      ? viewRaw
+      : "open";
+  const audience: MarketingAudience = isMarketingAudience(audienceRaw ?? "")
+    ? (audienceRaw as MarketingAudience)
+    : "all";
+
+  const { contacts, tickets } = await listInbox();
   const openContacts = contacts.filter((contact) =>
     isOpenContactStatus(contact.status),
   );
@@ -119,12 +221,25 @@ export default async function AdminContactsPage({
   const followUpContacts = contacts.filter((contact) =>
     isFollowUpContactStatus(contact.status),
   );
+  const marketingRecipients = collectMarketingRecipients(
+    contacts,
+    tickets,
+    audience,
+  );
+  const allEmailsCount = collectMarketingRecipients(
+    contacts,
+    tickets,
+    "all",
+  ).length;
+
   const visible =
     view === "paid"
       ? paidContacts
       : view === "followup"
         ? followUpContacts
-        : openContacts;
+        : view === "marketing"
+          ? []
+          : openContacts;
 
   const tabs: { id: ContactView; label: string; count: number }[] = [
     { id: "open", label: "Open", count: openContacts.length },
@@ -134,6 +249,14 @@ export default async function AdminContactsPage({
       label: "Follow-up leads",
       count: followUpContacts.length,
     },
+    { id: "marketing", label: "Marketing", count: allEmailsCount },
+  ];
+
+  const audienceTabs: { id: MarketingAudience; label: string }[] = [
+    { id: "all", label: "Everyone" },
+    { id: "paid", label: "Paid clients" },
+    { id: "followup", label: "Follow-up leads" },
+    { id: "open", label: "Open requests" },
   ];
 
   return (
@@ -145,27 +268,52 @@ export default async function AdminContactsPage({
         <h1 className="mt-2 text-3xl font-semibold text-white">
           Consultation requests
         </h1>
-        <p className="mt-2 text-sm text-white/60">
+        <p className="mt-2 text-sm text-white/55">
           Open requests stay here while you quote. Deposit paid and full payment
           clients are kept for marketing. Closed leads stay under Follow-up for
-          gentle reminders about the service they asked for.
+          gentle reminders. Use Marketing to email everyone in your system when
+          you have an update.
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {tabs.map((tab) => (
-          <Link
-            key={tab.id}
-            href={`/admin/contacts?view=${tab.id}`}
-            className={
-              view === tab.id
-                ? "rounded-full bg-accent px-4 py-2 text-sm font-semibold text-black"
-                : "rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-white/70 hover:border-white/40 hover:text-white"
-            }
-          >
-            {tab.label} ({tab.count})
-          </Link>
-        ))}
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((tab) => (
+            <Link
+              key={tab.id}
+              href={
+                tab.id === "marketing"
+                  ? `/admin/contacts?view=marketing&audience=${audience}`
+                  : `/admin/contacts?view=${tab.id}`
+              }
+              className={
+                view === tab.id
+                  ? "rounded-full bg-accent px-4 py-2 text-sm font-semibold text-black"
+                  : "rounded-full border border-white/12 px-4 py-2 text-sm font-medium text-white/70 hover:border-white/30 hover:text-white"
+              }
+            >
+              {tab.label} ({tab.count})
+            </Link>
+          ))}
+        </div>
+
+        {view === "marketing" ? (
+          <div className="flex flex-wrap gap-2 border-l border-white/12 pl-3">
+            {audienceTabs.map((tab) => (
+              <Link
+                key={tab.id}
+                href={`/admin/contacts?view=marketing&audience=${tab.id}`}
+                className={
+                  audience === tab.id
+                    ? "rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-black"
+                    : "rounded-full border border-white/12 px-3 py-1.5 text-xs font-medium text-white/55 hover:border-white/30 hover:text-white"
+                }
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {deleted === "1" ? (
@@ -219,7 +367,88 @@ export default async function AdminContactsPage({
         </p>
       ) : null}
 
-      {visible.length === 0 ? (
+      {blast === "1" ? (
+        <p
+          role="status"
+          className="rounded-xl border border-accent/25 bg-accent/10 px-4 py-3 text-sm text-accent"
+        >
+          Marketing email sent to {sent ?? "0"} address
+          {sent === "1" ? "" : "es"}
+          {failed && failed !== "0" ? ` (${failed} failed)` : ""}.
+        </p>
+      ) : null}
+      {blast === "failed" ? (
+        <p
+          role="status"
+          className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100"
+        >
+          No marketing emails could be sent. Check SMTP or Resend settings.
+        </p>
+      ) : null}
+      {blast === "empty" ? (
+        <p
+          role="status"
+          className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100"
+        >
+          No email addresses in this audience yet.
+        </p>
+      ) : null}
+      {blast === "invalid" ? (
+        <p
+          role="status"
+          className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100"
+        >
+          Choose a valid marketing message before sending.
+        </p>
+      ) : null}
+
+      {view === "marketing" ? (
+        <div className="space-y-6">
+          <BulkMarketingForm
+            action={sendBulkMarketingAction}
+            audience={audience}
+            recipientCount={marketingRecipients.length}
+          />
+
+          {marketingRecipients.length === 0 ? (
+            <p className="rounded-[1.4rem] border border-white/12 bg-[#0c0c0c] p-8 text-sm text-white/55">
+              No email addresses in this audience yet.
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-[1.4rem] border border-white/12 bg-[#0c0c0c]">
+              <div className="border-b border-white/8 px-4 py-3">
+                <p className="text-sm font-medium text-white">
+                  Email list ({marketingRecipients.length})
+                </p>
+                <p className="mt-1 text-xs text-white/45">
+                  Unique addresses from consultation requests
+                  {audience === "all" ? " and support tickets" : ""}.
+                </p>
+              </div>
+              {marketingRecipients.map((recipient) => (
+                <div
+                  key={recipient.email}
+                  className="flex flex-wrap items-start justify-between gap-3 border-b border-white/8 px-4 py-3 last:border-b-0"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium break-all text-white">
+                      {recipient.email}
+                    </p>
+                    <p className="mt-0.5 text-xs text-white/45">
+                      {[recipient.name, recipient.company]
+                        .filter(Boolean)
+                        .join(" · ") || "No name on file"}
+                    </p>
+                  </div>
+                  <p className="text-xs text-white/55">
+                    {recipient.sources.join(" · ")}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : visible.length === 0 ? (
         <p className="rounded-[1.4rem] border border-white/12 bg-[#0c0c0c] p-8 text-sm text-white/55">
           {view === "paid"
             ? "No paid clients yet. When you mark Deposit paid or Full payment, they appear here for future marketing emails."

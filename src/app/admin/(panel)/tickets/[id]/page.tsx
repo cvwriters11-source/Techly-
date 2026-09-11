@@ -46,7 +46,7 @@ export default async function AdminTicketDetailPage({
             className={urgencyTone(ticket.urgency)}
           />
         </div>
-        <p className="mt-2 text-sm text-white/50">
+        <p className="mt-2 text-sm text-white/55">
           Order number {formatOrderNumber(ticket.id)}
         </p>
       </div>

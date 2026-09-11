@@ -630,6 +630,80 @@ export async function sendContactCampaignEmail(input: ContactCampaignEmail) {
   });
 }
 
+export type MarketingBlastEmail = {
+  to: string;
+  name: string;
+  subject: string;
+  heading: string;
+  body: string;
+};
+
+export async function sendMarketingBlastEmail(input: MarketingBlastEmail) {
+  const siteUrl = adminBaseUrl();
+  const servicesHref = `${siteUrl}/services`;
+  const contactHref = `${siteUrl}/contact`;
+  const greetingName = input.name.trim() || "there";
+
+  const text = [
+    `Hi ${greetingName},`,
+    "",
+    input.body,
+    "",
+    `Browse services: ${servicesHref}`,
+    `Request a consultation: ${contactHref}`,
+    "",
+    "Techly",
+    site.email,
+    "",
+    "You are receiving this because you contacted Techly or used our support.",
+  ].join("\n");
+
+  const html = `<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background:#050505;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#050505;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#111111;border:1px solid #2a2a2a;border-radius:16px;">
+            <tr>
+              <td style="padding:28px 28px 8px;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#12c8b0;">Techly</td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 12px;font-size:22px;font-weight:700;color:#ffffff;">${escapeHtml(input.heading)}</td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 20px;font-size:15px;line-height:1.6;color:#d6d6d6;">
+                Hi ${escapeHtml(greetingName)},<br /><br />
+                ${noteToHtml(input.body)}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 28px;">
+                <a href="${escapeHtml(contactHref)}" style="display:inline-block;background:#12c8b0;color:#050505;text-decoration:none;font-weight:700;font-size:14px;padding:12px 18px;border-radius:999px;margin-right:10px;">Request a consultation</a>
+                <a href="${escapeHtml(servicesHref)}" style="display:inline-block;color:#12c8b0;text-decoration:none;font-weight:700;font-size:14px;padding:12px 0;">View services</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 28px;font-size:12px;line-height:1.5;color:#7a7a7a;">
+                You are receiving this because you contacted Techly or used our support.<br />
+                ${escapeHtml(site.email)}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
+  return sendEmail({
+    to: input.to,
+    subject: input.subject,
+    text,
+    html,
+  });
+}
+
 export type AdminInboxAlert = {
   kind: "ticket" | "contact" | "follow_up";
   recordId: string;

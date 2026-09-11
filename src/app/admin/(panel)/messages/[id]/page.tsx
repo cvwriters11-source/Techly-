@@ -29,7 +29,7 @@ export default async function AdminMessageDetailPage({
           ← All messages
         </Link>
         <h1 className="mt-3 text-3xl font-semibold text-white">{message.title}</h1>
-        <p className="mt-2 text-sm break-all text-white/50">{message.id}</p>
+        <p className="mt-2 text-sm break-all text-white/55">{message.id}</p>
       </div>
 
       <SiteMessageForm

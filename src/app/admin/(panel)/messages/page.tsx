@@ -29,7 +29,7 @@ export default async function AdminMessagesPage() {
           Site popup
         </p>
         <h1 className="mt-2 text-3xl font-semibold text-white">Messages</h1>
-        <p className="mt-2 max-w-2xl text-sm text-white/60">
+        <p className="mt-2 max-w-2xl text-sm text-white/55">
           Promotions and warnings appear in the branded popup after 2 minutes on
           each public page, then again 4 minutes later. The quotation button
           always goes to Contact us.
@@ -66,11 +66,11 @@ export default async function AdminMessagesPage() {
                 >
                   {message.kind}
                 </span>
-                <span className="text-[11px] uppercase tracking-wide text-white/40">
+                <span className="text-[11px] uppercase tracking-wide text-white/45">
                   {message.active ? "Live" : "Draft"}
                 </span>
               </div>
-              <p className="mt-2 text-sm leading-snug break-words text-white/65">
+              <p className="mt-2 text-sm leading-snug break-words text-white/70">
                 {message.body}
               </p>
             </Link>

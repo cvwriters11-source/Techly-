@@ -43,7 +43,7 @@ export function CareerFeatureToggle({ enabled }: { enabled: boolean }) {
         </p>
       ) : null}
 
-      <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/15 bg-[#0c0c0c] px-4 py-3 text-sm text-white has-checked:border-accent has-checked:bg-accent/10">
+      <label className="flex cursor-pointer items-center gap-3 rounded-[1.4rem] border border-white/12 bg-[#0c0c0c] px-4 py-3 text-sm text-white has-checked:border-accent has-checked:bg-accent/10">
         <input
           type="checkbox"
           name="enabled"
