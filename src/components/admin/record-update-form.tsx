@@ -12,7 +12,7 @@ import { formatDateTime, formatZar } from "@/lib/inbox/format";
 import {
   invoiceIsSendable,
   invoicePaymentDetails,
-  invoiceTerms,
+  invoiceTermsFor,
   invoiceTotals,
   type InvoiceDetails,
   type InvoiceLine,
@@ -372,18 +372,20 @@ export function RecordUpdateForm({
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-white">
-              Call-out fee (R)
+              Call-out fee (R){" "}
+              <span className="font-normal text-white/45">(optional)</span>
             </span>
             <input
               name="invoiceCalloutFee"
               value={calloutFee}
               onChange={(event) => setCalloutFee(event.target.value)}
               inputMode="decimal"
-              placeholder="0.00"
+              placeholder="Leave blank if none"
               className={fieldClass}
             />
             <span className="mt-1.5 block text-xs text-white/45">
-              Non-refundable. Added to the total.
+              Optional. If you add one, it is non-refundable and included in the
+              total.
             </span>
           </label>
           <label className="block">
@@ -404,7 +406,7 @@ export function RecordUpdateForm({
         </div>
 
         <ul className="list-disc space-y-1 pl-5 text-xs text-white/45">
-          {invoiceTerms.map((term) => (
+          {invoiceTermsFor({ calloutFee: totals.callout }).map((term) => (
             <li key={term}>{term}</li>
           ))}
         </ul>
@@ -414,10 +416,12 @@ export function RecordUpdateForm({
             <span>Items</span>
             <span>{formatZar(totals.itemsTotal)}</span>
           </p>
-          <p className="mt-1 flex justify-between gap-4">
-            <span>Call-out fee</span>
-            <span>{formatZar(totals.callout)}</span>
-          </p>
+          {totals.callout > 0 ? (
+            <p className="mt-1 flex justify-between gap-4">
+              <span>Call-out fee</span>
+              <span>{formatZar(totals.callout)}</span>
+            </p>
+          ) : null}
           <p className="mt-2 flex justify-between gap-4 font-semibold text-white">
             <span>Total</span>
             <span className="text-accent">{formatZar(totals.total)}</span>

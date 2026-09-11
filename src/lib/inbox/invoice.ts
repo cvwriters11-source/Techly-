@@ -36,6 +36,15 @@ export const invoiceTerms = [
   "The call-out fee is non-refundable.",
 ] as const;
 
+export function invoiceTermsFor(
+  invoice: Pick<InvoiceDetails, "calloutFee"> | null | undefined,
+) {
+  if ((invoice?.calloutFee || 0) > 0) return [...invoiceTerms];
+  return invoiceTerms.filter(
+    (term) => term !== "The call-out fee is non-refundable.",
+  );
+}
+
 export function emptyInvoice(): InvoiceDetails {
   return {
     number: "",

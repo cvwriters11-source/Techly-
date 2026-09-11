@@ -3,7 +3,7 @@ import { site } from "@/lib/site";
 import { formatDate, formatOrderNumber, formatZar } from "@/lib/inbox/format";
 import {
   invoiceIsSendable,
-  invoiceTerms,
+  invoiceTermsFor,
   invoiceTotals,
   lineTotal,
   type InvoiceDetails,
@@ -185,7 +185,7 @@ function invoiceBlock(invoice: InvoiceDetails) {
                     <td style="padding:4px 16px 8px;font-size:14px;color:#ffffff;text-align:right;">${escapeHtml(formatZar(totals.callout))}</td>
                   </tr>`
       : "";
-  const termsHtml = invoiceTerms
+  const termsHtml = invoiceTermsFor(invoice)
     .map((term) => `<li style="margin:0 0 6px;color:#d6d6d6;">${escapeHtml(term)}</li>`)
     .join("");
 
@@ -283,7 +283,7 @@ export async function sendClientUpdateEmail(input: ClientUpdateEmail) {
           `Total: ${formatZar(totals.total)}`,
           `Deposit due before work: ${formatZar(totals.depositDue)}`,
           `Balance due after work: ${formatZar(totals.balanceDue)}`,
-          ...invoiceTerms.map((term) => `- ${term}`),
+          ...invoiceTermsFor(invoice).map((term) => `- ${term}`),
         ]
       : []),
     "",

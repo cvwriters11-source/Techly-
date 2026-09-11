@@ -4,7 +4,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 import { formatDate, formatOrderNumber } from "@/lib/inbox/format";
 import {
   invoicePaymentDetails,
-  invoiceTerms,
+  invoiceTermsFor,
   invoiceTotals,
   lineTotal,
   type InvoiceDetails,
@@ -398,7 +398,7 @@ export async function buildInvoicePdf(input: InvoicePdfInput) {
     color: teal,
   });
   y -= 16;
-  for (const [index, term] of invoiceTerms.entries()) {
+  for (const [index, term] of invoiceTermsFor(invoice).entries()) {
     const termLines = wrapText(`${index + 1}. ${term}`, font, 9, width - margin * 2);
     for (const termLine of termLines) {
       page.drawText(termLine, {

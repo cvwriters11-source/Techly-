@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { DetailList, StatusBadge } from "@/components/admin/detail-list";
 import { formatDateTime, formatZar } from "@/lib/inbox/format";
 import {
-  invoiceTerms,
+  invoiceTermsFor,
   invoiceTotals,
   lineTotal,
 } from "@/lib/inbox/invoice";
@@ -147,7 +147,7 @@ export default async function AdminInvoiceDetailPage({
           Terms
         </h2>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-white/75">
-          {invoiceTerms.map((term) => (
+          {invoiceTermsFor(row.invoice).map((term) => (
             <li key={term}>{term}</li>
           ))}
         </ul>
