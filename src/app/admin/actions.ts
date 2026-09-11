@@ -8,13 +8,18 @@ import {
   createAdminSession,
   requireAdmin,
 } from "@/lib/admin/session";
-import { sendClientUpdateEmail, sendPaymentThankYouEmail } from "@/lib/email";
+import {
+  sendClientUpdateEmail,
+  sendContactCampaignEmail,
+  sendPaymentThankYouEmail,
+} from "@/lib/email";
 import {
   contactStatusLabel,
   formatDateTime,
   ticketStatusLabel,
 } from "@/lib/inbox/format";
 import {
+  emptyInvoice,
   invoiceFromForm,
   invoiceIsSendable,
   suggestedInvoiceNumber,
@@ -25,6 +30,7 @@ import {
   deleteContact,
   getContact,
   getTicket,
+  isPaidContactStatus,
   ticketStatuses,
   updateContact,
   updateTicket,
@@ -205,13 +211,32 @@ export async function saveContactUpdate(
   }
 
   const existing = await getContact(id);
-  const invoiceToSave = parsedInvoice.include
+  const now = new Date().toISOString();
+  let invoiceToSave = parsedInvoice.include
     ? {
         ...parsedInvoice.invoice,
         depositPaidAt: existing?.invoice.depositPaidAt ?? null,
         paidAt: existing?.invoice.paidAt ?? null,
       }
-    : null;
+    : existing?.invoice && invoiceIsSendable(existing.invoice)
+      ? { ...existing.invoice }
+      : null;
+
+  if (status === "deposit_paid" || status === "paid_in_full") {
+    const base = invoiceToSave ?? {
+      ...emptyInvoice(),
+      number: existing?.invoice.number || suggestedInvoiceNumber(id),
+      paymentDetails: existing?.invoice.paymentDetails || "",
+    };
+    invoiceToSave = {
+      ...base,
+      depositPaidAt:
+        status === "deposit_paid"
+          ? base.depositPaidAt || now
+          : base.depositPaidAt || now,
+      paidAt: status === "paid_in_full" ? base.paidAt || now : base.paidAt,
+    };
+  }
 
   const contact = await updateContact(id, {
     status,
@@ -236,6 +261,61 @@ export async function saveContactUpdate(
     };
   }
 
+  if (isPaidContactStatus(status) && invoiceToSave) {
+    const paymentKind = status === "deposit_paid" ? "deposit" : "full";
+    const paymentEmail = invoiceIsSendable(invoiceToSave)
+      ? await sendPaymentThankYouEmail({
+          to: contact.email,
+          name: contact.name,
+          company: contact.company,
+          recordId: contact.id,
+          invoice: invoiceToSave,
+          kind: paymentKind,
+        })
+      : await sendPaymentThankYouEmail({
+          to: contact.email,
+          name: contact.name,
+          company: contact.company,
+          recordId: contact.id,
+          invoice: {
+            ...invoiceToSave,
+            items: invoiceToSave.items.length
+              ? invoiceToSave.items
+              : [
+                  {
+                    description: contact.service || "Techly services",
+                    quantity: 1,
+                    unitPrice: invoiceToSave.amount ?? 0,
+                  },
+                ],
+            amount: invoiceToSave.amount ?? 0,
+            calloutFee: invoiceToSave.calloutFee || 0,
+            depositPercent: invoiceToSave.depositPercent || 50,
+          },
+          kind: paymentKind,
+        });
+
+    if (!paymentEmail.ok) {
+      return {
+        ok: false,
+        message: `Payment status saved, but the acknowledgment email to ${contact.email} was not sent. ${paymentEmail.error}`,
+      };
+    }
+
+    revalidatePath("/admin/invoices");
+    return {
+      ok: true,
+      emailed: true,
+      clientEmail: contact.email,
+      invoiceNumber: invoiceToSave.number,
+      redirectTo: "/admin/contacts?view=paid",
+      message:
+        status === "deposit_paid"
+          ? `Deposit paid saved and acknowledgment emailed to ${contact.email}. Client kept under Paid clients.`
+          : `Full payment saved and acknowledgment emailed to ${contact.email}. Client kept under Paid clients.`,
+    };
+  }
+
   const emailed = await sendClientUpdateEmail({
     to: contact.email,
     name: contact.name,
@@ -248,10 +328,10 @@ export async function saveContactUpdate(
       (status === "closed"
         ? "Your enquiry has been marked as closed. If you still need help, reply to this email."
         : ""),
-    invoice: invoiceToSave,
+    invoice: parsedInvoice.include ? invoiceToSave : null,
   });
 
-  if (emailed.ok && invoiceToSave) {
+  if (emailed.ok && parsedInvoice.include && invoiceToSave) {
     await updateContact(id, {
       invoice: {
         ...invoiceToSave,
@@ -278,12 +358,52 @@ export async function saveContactUpdate(
     ok: true,
     emailed: true,
     clientEmail: contact.email,
-    invoiceNumber: invoiceToSave ? invoiceToSave.number : "",
-    redirectTo: status === "closed" ? "/admin/contacts" : undefined,
-    message: invoiceToSave
+    invoiceNumber: parsedInvoice.include && invoiceToSave ? invoiceToSave.number : "",
+    redirectTo:
+      status === "closed" ? "/admin/contacts?view=followup" : undefined,
+    message: parsedInvoice.include && invoiceToSave
       ? `The invoice ${invoiceToSave.number} was emailed to ${contact.email} and saved in the invoice file.`
-      : `Update emailed to ${contact.email}.`,
+      : status === "closed"
+        ? `Marked closed and emailed ${contact.email}. Kept under Follow-up leads for reminders.`
+        : `Update emailed to ${contact.email}.`,
   };
+}
+
+export async function sendContactCampaignAction(formData: FormData) {
+  await requireAdmin();
+  const id = recordId(formData);
+  const kind = String(formData.get("campaignKind") ?? "").trim();
+  if (kind !== "lead_reminder" && kind !== "paid_marketing") {
+    redirect("/admin/contacts");
+  }
+
+  const contact = await getContact(id);
+  if (!contact) {
+    redirect("/admin/contacts");
+  }
+
+  const view =
+    kind === "paid_marketing" ? "paid" : "followup";
+
+  if (!contact.email) {
+    redirect(`/admin/contacts?view=${view}&campaign=missing`);
+  }
+
+  const emailed = await sendContactCampaignEmail({
+    to: contact.email,
+    name: contact.name,
+    company: contact.company,
+    recordId: contact.id,
+    service: contact.service,
+    description: contact.description,
+    kind,
+  });
+
+  if (!emailed.ok) {
+    redirect(`/admin/contacts?view=${view}&campaign=failed`);
+  }
+
+  redirect(`/admin/contacts?view=${view}&campaign=1`);
 }
 
 export async function markInvoicePayment(
@@ -342,7 +462,10 @@ export async function markInvoicePayment(
 
   const updated =
     source === "contact"
-      ? await updateContact(id, { invoice: nextInvoice })
+      ? await updateContact(id, {
+          invoice: nextInvoice,
+          status: kind === "deposit" ? "deposit_paid" : "paid_in_full",
+        })
       : await updateTicket(id, { invoice: nextInvoice });
 
   if (!updated) {

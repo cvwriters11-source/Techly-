@@ -2,10 +2,28 @@ import { emptyInvoice, decodeInvoiceDescription, encodeInvoiceDescription, type 
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const ticketStatuses = ["new", "in_progress", "resolved"] as const;
-export const contactStatuses = ["new", "contacted", "closed"] as const;
+export const contactStatuses = [
+  "new",
+  "contacted",
+  "closed",
+  "deposit_paid",
+  "paid_in_full",
+] as const;
 
 export type TicketStatus = (typeof ticketStatuses)[number];
 export type ContactStatus = (typeof contactStatuses)[number];
+
+export function isOpenContactStatus(status: string) {
+  return status === "new" || status === "contacted";
+}
+
+export function isPaidContactStatus(status: string) {
+  return status === "deposit_paid" || status === "paid_in_full";
+}
+
+export function isFollowUpContactStatus(status: string) {
+  return status === "closed";
+}
 export type { InvoiceDetails };
 
 export type TicketRecord = {

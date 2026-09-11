@@ -90,6 +90,8 @@ export default async function AdminContactDetailPage({
           { value: "new", label: "New" },
           { value: "contacted", label: "Contacted" },
           { value: "closed", label: "Closed" },
+          { value: "deposit_paid", label: "Deposit paid" },
+          { value: "paid_in_full", label: "Full payment" },
         ]}
       />
 

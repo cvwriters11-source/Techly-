@@ -56,7 +56,9 @@ export async function submitContact(
   const fieldErrors: Record<string, string> = {};
 
   if (name.length < 2) fieldErrors.name = "Please enter your name.";
-  if (company.length < 2) fieldErrors.company = "Please enter your company.";
+  if (company.length > 0 && company.length < 2) {
+    fieldErrors.company = "Please enter a valid company name, or leave it blank.";
+  }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     fieldErrors.email = "Please enter a valid email address.";
   }

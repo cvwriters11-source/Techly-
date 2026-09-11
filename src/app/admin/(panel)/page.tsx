@@ -10,7 +10,7 @@ import {
   ticketStatusLabel,
   urgencyTone,
 } from "@/lib/inbox/format";
-import { listInbox } from "@/lib/inbox/store";
+import { isOpenContactStatus, listInbox } from "@/lib/inbox/store";
 
 export const metadata: Metadata = {
   title: "Admin dashboard",
@@ -26,7 +26,9 @@ export default async function AdminDashboardPage() {
       ticket.urgency.toLowerCase().includes("urgent"),
   );
   const newContacts = contacts.filter((contact) => contact.status === "new");
-  const openContacts = contacts.filter((contact) => contact.status !== "closed");
+  const openContacts = contacts.filter((contact) =>
+    isOpenContactStatus(contact.status),
+  );
 
   const stats = [
     {

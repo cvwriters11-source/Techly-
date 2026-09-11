@@ -498,6 +498,138 @@ export async function sendPaymentThankYouEmail(input: PaymentThankYouEmail) {
   });
 }
 
+export type ContactCampaignEmail = {
+  to: string;
+  name: string;
+  company: string;
+  recordId: string;
+  service: string;
+  description: string;
+  kind: "lead_reminder" | "paid_marketing";
+};
+
+export async function sendContactCampaignEmail(input: ContactCampaignEmail) {
+  const siteUrl = adminBaseUrl();
+  const servicesHref = `${siteUrl}/services`;
+  const contactHref = `${siteUrl}/contact`;
+  const isReminder = input.kind === "lead_reminder";
+  const heading = isReminder
+    ? "Still thinking about your Techly project?"
+    : "Thank you for choosing Techly";
+  const subject = isReminder
+    ? `A quick note about your ${input.service} enquiry`
+    : `Useful Techly updates for ${input.company || input.name}`;
+  const intro = isReminder
+    ? `You reached out about ${input.service}. We are still ready to help you move from enquiry to a clear quotation and a practical install or build.`
+    : `Because you are already a Techly client, here is a short update on how we can keep supporting your business with software, IT support, automation and CCTV.`;
+  const pitch = isReminder
+    ? [
+        "What we can do for you next:",
+        `• Scope the ${input.service.toLowerCase()} work around your site or business`,
+        "• Share a practical quotation with deposit and balance clearly set out",
+        "• Install or build with remote support and clear next steps",
+        "",
+        "Reply to this email, or request a consultation online, and we will pick up where you left off.",
+      ].join("\n")
+    : [
+        "Ways we can keep helping:",
+        "• Expand CCTV coverage, remote viewing or solar cameras",
+        "• Custom software and websites that match how you work",
+        "• IT support, hosting and automation to reduce downtime",
+        "",
+        "When you are ready for the next improvement, reply to this email and we will put a quotation together.",
+      ].join("\n");
+
+  const text = [
+    `Hi ${input.name},`,
+    "",
+    intro,
+    "",
+    `Reference: ${formatOrderNumber(input.recordId)}`,
+    `Service: ${input.service}`,
+    ...(input.description.trim()
+      ? ["", "Your original brief:", input.description.trim()]
+      : []),
+    "",
+    pitch,
+    "",
+    `Browse services: ${servicesHref}`,
+    `Request a consultation: ${contactHref}`,
+    "",
+    "Techly",
+    site.email,
+  ].join("\n");
+
+  const html = `<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background:#050505;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#050505;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#111111;border:1px solid #2a2a2a;border-radius:16px;">
+            <tr>
+              <td style="padding:28px 28px 8px;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#12c8b0;">Techly</td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 12px;font-size:22px;font-weight:700;color:#ffffff;">${escapeHtml(heading)}</td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 20px;font-size:15px;line-height:1.6;color:#d6d6d6;">
+                Hi ${escapeHtml(input.name)},<br /><br />
+                ${escapeHtml(intro)}
+                ${input.company ? `<br /><br />For ${escapeHtml(input.company)}.` : ""}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 20px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;border:1px solid #2a2a2a;border-radius:12px;">
+                  <tr>
+                    <td style="padding:14px 16px 4px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;">Reference</td>
+                    <td style="padding:14px 16px 4px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;text-align:right;">Service</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0 16px 14px;font-size:15px;font-weight:700;color:#ffffff;">${escapeHtml(formatOrderNumber(input.recordId))}</td>
+                    <td style="padding:0 16px 14px;font-size:15px;color:#d6d6d6;text-align:right;">${escapeHtml(input.service)}</td>
+                  </tr>
+                  ${
+                    input.description.trim()
+                      ? `<tr>
+                    <td colspan="2" style="padding:0 16px 6px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;">Your brief</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" style="padding:0 16px 16px;font-size:14px;line-height:1.6;color:#d6d6d6;">${noteToHtml(input.description.trim())}</td>
+                  </tr>`
+                      : ""
+                  }
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 20px;font-size:15px;line-height:1.7;color:#d6d6d6;">
+                ${noteToHtml(pitch)}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 28px;">
+                <a href="${escapeHtml(contactHref)}" style="display:inline-block;background:#12c8b0;color:#050505;text-decoration:none;font-weight:700;font-size:14px;padding:12px 18px;border-radius:999px;margin-right:10px;">Request a consultation</a>
+                <a href="${escapeHtml(servicesHref)}" style="display:inline-block;color:#12c8b0;text-decoration:none;font-weight:700;font-size:14px;padding:12px 0;">View services</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
+  return sendEmail({
+    to: input.to,
+    subject,
+    text,
+    html,
+  });
+}
+
 export type AdminInboxAlert = {
   kind: "ticket" | "contact" | "follow_up";
   recordId: string;

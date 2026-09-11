@@ -43,6 +43,8 @@ export function ticketStatusLabel(status: string) {
 export function contactStatusLabel(status: string) {
   if (status === "contacted") return "Contacted";
   if (status === "closed") return "Closed";
+  if (status === "deposit_paid") return "Deposit paid";
+  if (status === "paid_in_full") return "Full payment";
   return "New";
 }
 
@@ -60,6 +62,12 @@ export function statusTone(status: string) {
   if (status === "new") return "border-accent/30 bg-accent/10 text-accent";
   if (status === "in_progress" || status === "contacted") {
     return "border-sky-400/30 bg-sky-400/10 text-sky-100";
+  }
+  if (status === "deposit_paid") {
+    return "border-emerald-400/30 bg-emerald-400/10 text-emerald-100";
+  }
+  if (status === "paid_in_full") {
+    return "border-accent/40 bg-accent/15 text-accent";
   }
   return "border-white/12 bg-white/5 text-white/70";
 }

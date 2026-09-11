@@ -337,7 +337,7 @@ export function ContactForm({
             className={inputClass}
             name="company"
             autoComplete="organization"
-            required
+            placeholder="Optional"
           />
         </Field>
         <Field label="Email" error={state.fieldErrors?.email}>

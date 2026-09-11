@@ -237,7 +237,7 @@ export function RecordUpdateForm({
           <span className="mt-2 block text-xs text-white/45">
             Saving emails the status and this note to {notifyEmail}.
             {statuses.some((option) => option.value === "closed")
-              ? " Marking Closed removes it from the open list."
+              ? " Marking Closed moves them to Follow-up leads for reminders. Deposit paid and Full payment email the client an acknowledgment and keep them under Paid clients."
               : statuses.some((option) => option.value === "resolved")
                 ? " Marking Resolved removes it from the open list."
                 : ""}
