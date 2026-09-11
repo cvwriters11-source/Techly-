@@ -263,37 +263,31 @@ export async function saveContactUpdate(
 
   if (isPaidContactStatus(status) && invoiceToSave) {
     const paymentKind = status === "deposit_paid" ? "deposit" : "full";
-    const paymentEmail = invoiceIsSendable(invoiceToSave)
-      ? await sendPaymentThankYouEmail({
-          to: contact.email,
-          name: contact.name,
-          company: contact.company,
-          recordId: contact.id,
-          invoice: invoiceToSave,
-          kind: paymentKind,
-        })
-      : await sendPaymentThankYouEmail({
-          to: contact.email,
-          name: contact.name,
-          company: contact.company,
-          recordId: contact.id,
-          invoice: {
-            ...invoiceToSave,
-            items: invoiceToSave.items.length
-              ? invoiceToSave.items
-              : [
-                  {
-                    description: contact.service || "Techly services",
-                    quantity: 1,
-                    unitPrice: invoiceToSave.amount ?? 0,
-                  },
-                ],
-            amount: invoiceToSave.amount ?? 0,
-            calloutFee: invoiceToSave.calloutFee || 0,
-            depositPercent: invoiceToSave.depositPercent || 50,
-          },
-          kind: paymentKind,
-        });
+    const hasBillableInvoice =
+      invoiceToSave.items.length > 0 || invoiceToSave.calloutFee > 0;
+    const ackInvoice: InvoiceDetails = hasBillableInvoice
+      ? invoiceToSave
+      : {
+          ...invoiceToSave,
+          items: [
+            {
+              description: contact.service || "Techly services",
+              quantity: 1,
+              unitPrice: invoiceToSave.amount ?? 0,
+            },
+          ],
+          amount: invoiceToSave.amount ?? 0,
+          calloutFee: invoiceToSave.calloutFee || 0,
+          depositPercent: invoiceToSave.depositPercent || 50,
+        };
+    const paymentEmail = await sendPaymentThankYouEmail({
+      to: contact.email,
+      name: contact.name,
+      company: contact.company,
+      recordId: contact.id,
+      invoice: ackInvoice,
+      kind: paymentKind,
+    });
 
     if (!paymentEmail.ok) {
       return {
