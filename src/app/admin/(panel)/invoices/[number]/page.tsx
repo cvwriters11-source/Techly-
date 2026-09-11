@@ -85,9 +85,16 @@ export default async function AdminInvoiceDetailPage({
             {row.invoice.items.map((item, index) => (
               <div
                 key={`${item.description}-${index}`}
-                className="grid gap-1 px-5 py-4 sm:grid-cols-[1fr_auto_auto_auto] sm:items-center sm:gap-6"
+                className="grid gap-1 px-5 py-4 sm:grid-cols-[1fr_auto_auto_auto] sm:items-start sm:gap-6"
               >
-                <p className="text-sm text-white">{item.description}</p>
+                <div className="min-w-0">
+                  <p className="text-sm text-white">{item.description}</p>
+                  {item.details?.trim() ? (
+                    <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-white/55">
+                      {item.details.trim()}
+                    </p>
+                  ) : null}
+                </div>
                 <p className="text-sm text-white/55">Qty {item.quantity}</p>
                 <p className="text-sm text-white/55">
                   {formatZar(item.unitPrice)}

@@ -166,14 +166,17 @@ function invoiceBlock(invoice: InvoiceDetails) {
   const totals = invoiceTotals(invoice);
   const payment = invoice.paymentDetails.trim();
   const itemRows = invoice.items
-    .map(
-      (item) => `<tr>
-                    <td style="padding:0 16px 8px;font-size:14px;color:#ffffff;">${escapeHtml(item.description)}</td>
-                    <td style="padding:0 8px 8px;font-size:14px;color:#d6d6d6;text-align:center;white-space:nowrap;">${item.quantity}</td>
-                    <td style="padding:0 8px 8px;font-size:14px;color:#d6d6d6;text-align:right;white-space:nowrap;">${escapeHtml(formatZar(item.unitPrice))}</td>
-                    <td style="padding:0 16px 8px;font-size:14px;color:#ffffff;text-align:right;white-space:nowrap;">${escapeHtml(formatZar(lineTotal(item)))}</td>
-                  </tr>`,
-    )
+    .map((item) => {
+      const details = item.details?.trim()
+        ? `<div style="margin-top:4px;font-size:12px;line-height:1.45;color:#9a9a9a;">${escapeHtml(item.details.trim()).replaceAll("\n", "<br />")}</div>`
+        : "";
+      return `<tr>
+                    <td style="padding:0 16px 8px;font-size:14px;color:#ffffff;">${escapeHtml(item.description)}${details}</td>
+                    <td style="padding:0 8px 8px;font-size:14px;color:#d6d6d6;text-align:center;white-space:nowrap;vertical-align:top;">${item.quantity}</td>
+                    <td style="padding:0 8px 8px;font-size:14px;color:#d6d6d6;text-align:right;white-space:nowrap;vertical-align:top;">${escapeHtml(formatZar(item.unitPrice))}</td>
+                    <td style="padding:0 16px 8px;font-size:14px;color:#ffffff;text-align:right;white-space:nowrap;vertical-align:top;">${escapeHtml(formatZar(lineTotal(item)))}</td>
+                  </tr>`;
+    })
     .join("");
   const calloutRow =
     totals.callout > 0

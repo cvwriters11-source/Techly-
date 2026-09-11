@@ -241,17 +241,31 @@ export async function buildInvoicePdf(input: InvoicePdfInput) {
   const totals = invoiceTotals(invoice);
 
   for (const item of lines) {
+    const detailText = item.details?.trim() || "";
     const descLines = wrapText(item.description, font, 10, 250);
+    const detailLines = detailText
+      ? wrapText(detailText, font, 8, 250)
+      : [];
     const rowTop = y;
     for (const descLine of descLines) {
       page.drawText(descLine, {
         x: margin + 12,
         y,
         size: 10,
-        font,
+        font: bold,
         color: navy,
       });
       y -= 13;
+    }
+    for (const detailLine of detailLines) {
+      page.drawText(detailLine, {
+        x: margin + 12,
+        y,
+        size: 8,
+        font,
+        color: muted,
+      });
+      y -= 11;
     }
     const qty = String(item.quantity);
     const unit = money(item.unitPrice);
@@ -277,7 +291,7 @@ export async function buildInvoicePdf(input: InvoicePdfInput) {
       font,
       color: navy,
     });
-    y -= 6;
+    y -= 8;
   }
 
   if (totals.callout > 0) {

@@ -25,7 +25,7 @@ const fieldClass =
   "w-full rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-white/35 focus:border-accent/50";
 
 function emptyLine(): InvoiceLine {
-  return { description: "", quantity: 1, unitPrice: 0 };
+  return { description: "", details: "", quantity: 1, unitPrice: 0 };
 }
 
 function EmailSentPopup({
@@ -253,8 +253,8 @@ export function RecordUpdateForm({
             Invoice
           </p>
           <p className="mt-1 text-xs text-white/45">
-            Add items with quantity and unit price. The total, deposit and
-            balance are calculated for the PDF invoice.
+            Add items with quantity, unit price and an optional description.
+            The total, deposit and balance are calculated for the PDF invoice.
           </p>
         </div>
         <label className="block">
@@ -273,72 +273,91 @@ export function RecordUpdateForm({
           {items.map((line, index) => (
             <div
               key={index}
-              className="grid gap-2 rounded-[1.4rem] border border-white/12 p-3 sm:grid-cols-[1fr_5.5rem_7rem_6rem_auto]"
+              className="space-y-3 rounded-[1.4rem] border border-white/12 p-3"
             >
-              <label className="block sm:col-span-1">
-                <span className="mb-1 block text-xs text-white/55">Item</span>
-                <input
-                  name="itemDescription"
-                  value={line.description}
-                  onChange={(event) =>
-                    updateLine(index, { description: event.target.value })
-                  }
-                  placeholder="Work or product"
-                  className={fieldClass}
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs text-white/55">Qty</span>
-                <input
-                  name="itemQty"
-                  value={line.quantity}
-                  onChange={(event) =>
-                    updateLine(index, {
-                      quantity: Number(event.target.value) || 0,
-                    })
-                  }
-                  inputMode="numeric"
-                  className={fieldClass}
-                />
-              </label>
+              <div className="grid gap-2 sm:grid-cols-[1fr_5.5rem_7rem_6rem_auto]">
+                <label className="block sm:col-span-1">
+                  <span className="mb-1 block text-xs text-white/55">Item</span>
+                  <input
+                    name="itemDescription"
+                    value={line.description}
+                    onChange={(event) =>
+                      updateLine(index, { description: event.target.value })
+                    }
+                    placeholder="Work or product"
+                    className={fieldClass}
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs text-white/55">Qty</span>
+                  <input
+                    name="itemQty"
+                    value={line.quantity}
+                    onChange={(event) =>
+                      updateLine(index, {
+                        quantity: Number(event.target.value) || 0,
+                      })
+                    }
+                    inputMode="numeric"
+                    className={fieldClass}
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs text-white/55">
+                    Unit price
+                  </span>
+                  <input
+                    name="itemUnit"
+                    value={line.unitPrice || ""}
+                    onChange={(event) =>
+                      updateLine(index, {
+                        unitPrice: Number(event.target.value) || 0,
+                      })
+                    }
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    className={fieldClass}
+                  />
+                </label>
+                <div>
+                  <span className="mb-1 block text-xs text-white/55">
+                    Line total
+                  </span>
+                  <p className="rounded-xl border border-white/12 px-3 py-2.5 text-sm text-accent">
+                    {formatZar(line.quantity * line.unitPrice)}
+                  </p>
+                </div>
+                {items.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setItems((current) =>
+                        current.filter((_, lineIndex) => lineIndex !== index),
+                      )
+                    }
+                    className="self-end text-xs text-white/45 hover:text-white"
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <span className="hidden sm:block" />
+                )}
+              </div>
               <label className="block">
                 <span className="mb-1 block text-xs text-white/55">
-                  Unit price
+                  Description
                 </span>
-                <input
-                  name="itemUnit"
-                  value={line.unitPrice || ""}
+                <textarea
+                  name="itemDetails"
+                  value={line.details ?? ""}
                   onChange={(event) =>
-                    updateLine(index, {
-                      unitPrice: Number(event.target.value) || 0,
-                    })
+                    updateLine(index, { details: event.target.value })
                   }
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  className={fieldClass}
+                  rows={2}
+                  placeholder="Optional details for this line (shown on the invoice)"
+                  className={`${fieldClass} min-h-[4.5rem] resize-y`}
                 />
               </label>
-              <div>
-                <span className="mb-1 block text-xs text-white/55">Line total</span>
-                <p className="rounded-xl border border-white/12 px-3 py-2.5 text-sm text-accent">
-                  {formatZar(line.quantity * line.unitPrice)}
-                </p>
-              </div>
-              {items.length > 1 ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setItems((current) =>
-                      current.filter((_, lineIndex) => lineIndex !== index),
-                    )
-                  }
-                  className="self-end text-xs text-white/45 hover:text-white"
-                >
-                  Remove
-                </button>
-              ) : (
-                <span className="hidden sm:block" />
-              )}
             </div>
           ))}
           <button

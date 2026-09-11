@@ -2,6 +2,7 @@ import { site } from "@/lib/site";
 
 export type InvoiceLine = {
   description: string;
+  details?: string;
   quantity: number;
   unitPrice: number;
 };
@@ -130,9 +131,15 @@ export function decodeInvoiceDescription(
   try {
     const parsed = JSON.parse(raw) as StoredInvoicePayload;
     if (parsed && parsed.v === 1 && Array.isArray(parsed.items)) {
-      const items = parsed.items.filter(
-        (line) => line && typeof line.description === "string",
-      );
+      const items = parsed.items
+        .filter((line) => line && typeof line.description === "string")
+        .map((line) => ({
+          description: line.description,
+          details:
+            typeof line.details === "string" ? line.details.trim() : "",
+          quantity: Number(line.quantity) || 0,
+          unitPrice: Number(line.unitPrice) || 0,
+        }));
       return {
         items,
         calloutFee: Number(parsed.calloutFee) || 0,
@@ -184,6 +191,7 @@ export function invoiceFromForm(
   const paymentDetails = String(formData.get("invoicePaymentDetails") ?? "").trim();
   const clientName = String(formData.get("clientName") ?? "").trim();
   const descriptions = formData.getAll("itemDescription").map((value) => String(value).trim());
+  const detailsList = formData.getAll("itemDetails").map((value) => String(value).trim());
   const quantities = formData.getAll("itemQty").map((value) => String(value).trim());
   const unitPrices = formData.getAll("itemUnit").map((value) => String(value).trim());
   const calloutFee = parseZar(String(formData.get("invoiceCalloutFee") ?? "").trim()) ?? 0;
@@ -193,9 +201,10 @@ export function invoiceFromForm(
   const items: InvoiceLine[] = [];
   for (let index = 0; index < Math.max(descriptions.length, quantities.length, unitPrices.length); index += 1) {
     const description = descriptions[index] ?? "";
+    const details = detailsList[index] ?? "";
     const quantityRaw = quantities[index] ?? "";
     const unitRaw = unitPrices[index] ?? "";
-    if (!description && !quantityRaw && !unitRaw) continue;
+    if (!description && !details && !quantityRaw && !unitRaw) continue;
     if (!description && (!unitRaw || parseZar(unitRaw) === 0) && (!quantityRaw || Number(quantityRaw) === 1)) {
       continue;
     }
@@ -207,7 +216,7 @@ export function invoiceFromForm(
         message: "Each item needs a description, quantity and unit price, or clear that row.",
       };
     }
-    items.push({ description, quantity, unitPrice });
+    items.push({ description, details, quantity, unitPrice });
   }
 
   if (items.length === 0 && calloutFee <= 0) {
