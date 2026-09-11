@@ -4,6 +4,7 @@ import { useActionState, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { BrandSpinBackdrop } from "@/components/brand-spin-backdrop";
 import { Button } from "@/components/ui/button";
 import type { RecordUpdateState } from "@/app/admin/actions";
 import { markInvoicePayment } from "@/app/admin/actions";
@@ -64,13 +65,14 @@ function EmailSentPopup({
       onClick={onClose}
     >
       <div
-        className="flex h-[min(680px,92dvh)] w-full max-w-[390px] flex-col rounded-[2.4rem] border border-accent/50 bg-[#111] px-6 py-8 text-center shadow-[0_0_80px_rgba(18,200,176,0.18)]"
+        className="relative flex h-[min(680px,92dvh)] w-full max-w-[390px] flex-col overflow-hidden rounded-[2.4rem] border border-accent/50 bg-[#111] px-6 py-8 text-center shadow-[0_0_80px_rgba(18,200,176,0.18)]"
         onClick={(event) => event.stopPropagation()}
       >
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent">
+        <BrandSpinBackdrop />
+        <p className="relative z-10 text-xs font-semibold uppercase tracking-[0.28em] text-accent">
           Sent
         </p>
-        <div className="flex flex-1 flex-col items-center justify-center">
+        <div className="relative z-10 flex flex-1 flex-col items-center justify-center">
           <h2
             id="email-sent-title"
             className="text-5xl font-semibold leading-tight text-white"
@@ -85,7 +87,7 @@ function EmailSentPopup({
             </p>
           ) : null}
         </div>
-        <div className="flex flex-col gap-3">
+        <div className="relative z-10 flex flex-col gap-3">
           {invoiceNumber ? (
             <Link
               href={`/admin/invoices?q=${encodeURIComponent(invoiceNumber)}`}

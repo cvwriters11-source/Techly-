@@ -11,11 +11,12 @@ export const marketingTemplates = [
   {
     id: "security_checkup",
     label: "CCTV security checkup",
-    subject: "Is your site covered the way it should be?",
-    heading: "A quick CCTV checkup from Techly",
+    subject: "Protect what matters most with CCTV security",
+    heading: "Protect what matters most with CCTV security",
     body: [
-      "Whether you already have cameras or you are still planning coverage, we help homes and businesses get clear viewing, reliable recording, and practical install options — including solar and IP kits.",
-      "Reply to this email if you would like a short site review or a fresh quotation.",
+      "Don’t wait until it’s too late. Keep your farm, home, office, business and property protected with reliable CCTV camera security.",
+      "Monitor your property and help deter theft, break-ins and unwanted activity.",
+      "Contact us today and let us help you put the right security solution in place to give you greater protection and peace of mind.",
     ].join("\n\n"),
   },
   {

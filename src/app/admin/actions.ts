@@ -36,8 +36,6 @@ import {
   deleteContact,
   getContact,
   getTicket,
-  isFollowUpContactStatus,
-  isOpenContactStatus,
   isPaidContactStatus,
   listInbox,
   ticketStatuses,
@@ -424,39 +422,18 @@ export async function sendBulkMarketingAction(formData: FormData) {
     redirect(`/admin/contacts?view=marketing&audience=${audience}&blast=invalid`);
   }
 
-  const { contacts, tickets } = await listInbox();
+  const { contacts } = await listInbox();
   const byEmail = new Map<string, { email: string; name: string }>();
 
-  const includeContact =
-    audience === "all"
-      ? () => true
-      : audience === "paid"
-        ? isPaidContactStatus
-        : audience === "followup"
-          ? isFollowUpContactStatus
-          : isOpenContactStatus;
-
+  // Always email every unique Contact us address (all statuses).
   for (const contact of contacts) {
     const email = contact.email.trim();
-    if (!email || !includeContact(contact.status)) continue;
+    if (!email) continue;
     const key = email.toLowerCase();
     if (!byEmail.has(key)) {
       byEmail.set(key, {
         email,
         name: contact.name.trim() || contact.company.trim() || "there",
-      });
-    }
-  }
-
-  if (audience === "all") {
-    for (const ticket of tickets) {
-      const email = ticket.email.trim();
-      if (!email) continue;
-      const key = email.toLowerCase();
-      if (byEmail.has(key)) continue;
-      byEmail.set(key, {
-        email,
-        name: ticket.name.trim() || ticket.company.trim() || "there",
       });
     }
   }

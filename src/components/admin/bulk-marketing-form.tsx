@@ -27,11 +27,11 @@ export function BulkMarketingForm({
       onSubmit={(event) => {
         if (recipientCount === 0) {
           event.preventDefault();
-          window.alert("There are no email addresses in this audience yet.");
+          window.alert("There are no Contact us email addresses yet.");
           return;
         }
         const ok = window.confirm(
-          `Send “${selected.label}” to ${recipientCount} email${recipientCount === 1 ? "" : "s"}? This cannot be undone.`,
+          `Send “${selected.label}” to all ${recipientCount} Contact us email${recipientCount === 1 ? "" : "s"}? This cannot be undone.`,
         );
         if (!ok) event.preventDefault();
       }}
@@ -82,12 +82,17 @@ export function BulkMarketingForm({
         </p>
       </div>
 
+      <p className="text-xs text-white/45">
+        Sends to every unique email on Contact us (all statuses), not only the
+        audience list below.
+      </p>
+
       <button
         type="submit"
         disabled={recipientCount === 0}
         className="rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40"
       >
-        Send to all ({recipientCount})
+        Send to all Contact us ({recipientCount})
       </button>
     </form>
   );

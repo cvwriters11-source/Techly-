@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import {
   deleteContactAction,
   sendBulkMarketingAction,
@@ -8,6 +9,7 @@ import {
 import { StatusBadge } from "@/components/admin/detail-list";
 import { ConfirmDeleteForm } from "@/components/admin/confirm-delete-form";
 import { BulkMarketingForm } from "@/components/admin/bulk-marketing-form";
+import { MarketingBlastPopup } from "@/components/admin/admin-email-sent-popup";
 import {
   contactStatusLabel,
   formatDateTime,
@@ -24,7 +26,6 @@ import {
   isPaidContactStatus,
   listInbox,
   type ContactRecord,
-  type TicketRecord,
 } from "@/lib/inbox/store";
 
 export const metadata: Metadata = {
@@ -117,7 +118,6 @@ function contactSourceLabel(status: ContactRecord["status"]) {
 
 function collectMarketingRecipients(
   contacts: ContactRecord[],
-  tickets: TicketRecord[],
   audience: MarketingAudience,
 ): MarketingRecipient[] {
   const byEmail = new Map<string, MarketingRecipient>();
@@ -147,27 +147,6 @@ function collectMarketingRecipients(
       company: contact.company.trim(),
       sources: [source],
     });
-  }
-
-  if (audience === "all") {
-    for (const ticket of tickets) {
-      const email = ticket.email.trim();
-      if (!email) continue;
-      const key = email.toLowerCase();
-      const existing = byEmail.get(key);
-      if (existing) {
-        if (!existing.sources.includes("Support ticket")) {
-          existing.sources.push("Support ticket");
-        }
-        continue;
-      }
-      byEmail.set(key, {
-        email,
-        name: ticket.name.trim(),
-        company: ticket.company.trim(),
-        sources: ["Support ticket"],
-      });
-    }
   }
 
   return [...byEmail.values()].sort((a, b) =>
@@ -211,7 +190,7 @@ export default async function AdminContactsPage({
     ? (audienceRaw as MarketingAudience)
     : "all";
 
-  const { contacts, tickets } = await listInbox();
+  const { contacts } = await listInbox();
   const openContacts = contacts.filter((contact) =>
     isOpenContactStatus(contact.status),
   );
@@ -221,16 +200,9 @@ export default async function AdminContactsPage({
   const followUpContacts = contacts.filter((contact) =>
     isFollowUpContactStatus(contact.status),
   );
-  const marketingRecipients = collectMarketingRecipients(
-    contacts,
-    tickets,
-    audience,
-  );
-  const allEmailsCount = collectMarketingRecipients(
-    contacts,
-    tickets,
-    "all",
-  ).length;
+  const marketingRecipients = collectMarketingRecipients(contacts, audience);
+  const allContactEmails = collectMarketingRecipients(contacts, "all");
+  const allEmailsCount = allContactEmails.length;
 
   const visible =
     view === "paid"
@@ -367,47 +339,21 @@ export default async function AdminContactsPage({
         </p>
       ) : null}
 
-      {blast === "1" ? (
-        <p
-          role="status"
-          className="rounded-xl border border-accent/25 bg-accent/10 px-4 py-3 text-sm text-accent"
-        >
-          Marketing email sent to {sent ?? "0"} address
-          {sent === "1" ? "" : "es"}
-          {failed && failed !== "0" ? ` (${failed} failed)` : ""}.
-        </p>
-      ) : null}
-      {blast === "failed" ? (
-        <p
-          role="status"
-          className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100"
-        >
-          No marketing emails could be sent. Check SMTP or Resend settings.
-        </p>
-      ) : null}
-      {blast === "empty" ? (
-        <p
-          role="status"
-          className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100"
-        >
-          No email addresses in this audience yet.
-        </p>
-      ) : null}
-      {blast === "invalid" ? (
-        <p
-          role="status"
-          className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100"
-        >
-          Choose a valid marketing message before sending.
-        </p>
-      ) : null}
+      <Suspense fallback={null}>
+        <MarketingBlastPopup
+          blast={blast}
+          sent={sent}
+          failed={failed}
+          audience={audience}
+        />
+      </Suspense>
 
       {view === "marketing" ? (
         <div className="space-y-6">
           <BulkMarketingForm
             action={sendBulkMarketingAction}
             audience={audience}
-            recipientCount={marketingRecipients.length}
+            recipientCount={allEmailsCount}
           />
 
           {marketingRecipients.length === 0 ? (
@@ -421,8 +367,10 @@ export default async function AdminContactsPage({
                   Email list ({marketingRecipients.length})
                 </p>
                 <p className="mt-1 text-xs text-white/45">
-                  Unique addresses from consultation requests
-                  {audience === "all" ? " and support tickets" : ""}.
+                  Unique Contact us addresses
+                  {audience === "all"
+                    ? ". Send to all reaches every Contact us email."
+                    : " in this audience. Send to all still emails every Contact us address."}
                 </p>
               </div>
               {marketingRecipients.map((recipient) => (
