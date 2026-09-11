@@ -384,6 +384,120 @@ export async function sendClientUpdateEmail(input: ClientUpdateEmail) {
   });
 }
 
+export type PaymentThankYouEmail = {
+  to: string;
+  name: string;
+  company: string;
+  recordId: string;
+  invoice: InvoiceDetails;
+  kind: "deposit" | "full";
+};
+
+export async function sendPaymentThankYouEmail(input: PaymentThankYouEmail) {
+  const totals = invoiceTotals(input.invoice);
+  const isDeposit = input.kind === "deposit";
+  const amount = isDeposit ? totals.depositDue : totals.total;
+  const heading = isDeposit ? "Deposit received" : "Payment received in full";
+  const subject = isDeposit
+    ? `Thank you — Techly deposit received (${input.invoice.number})`
+    : `Thank you — Techly invoice ${input.invoice.number} paid in full`;
+  const intro = isDeposit
+    ? `Thank you. We have received your deposit of ${formatZar(amount)} for invoice ${input.invoice.number}.`
+    : `Thank you. We have received your full payment of ${formatZar(amount)} for invoice ${input.invoice.number}.`;
+  const followUp = isDeposit
+    ? `The remaining balance of ${formatZar(totals.balanceDue)} is payable after the work is completed.`
+    : "Your invoice is now marked as paid in full. We appreciate your business.";
+
+  const text = [
+    `Hi ${input.name},`,
+    "",
+    intro,
+    "",
+    `Reference: ${formatOrderNumber(input.recordId)}`,
+    `Invoice: ${input.invoice.number}`,
+    `Amount acknowledged: ${formatZar(amount)}`,
+    ...(isDeposit
+      ? [`Balance still due after work: ${formatZar(totals.balanceDue)}`]
+      : ["Status: Paid in full"]),
+    "",
+    followUp,
+    "",
+    "If you have questions, reply to this email.",
+    "",
+    "Techly",
+    site.email,
+  ].join("\n");
+
+  const html = `<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background:#050505;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#050505;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#111111;border:1px solid #2a2a2a;border-radius:16px;">
+            <tr>
+              <td style="padding:28px 28px 8px;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#12c8b0;">Techly</td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 12px;font-size:22px;font-weight:700;color:#ffffff;">${escapeHtml(heading)}</td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 20px;font-size:15px;line-height:1.6;color:#d6d6d6;">
+                Hi ${escapeHtml(input.name)},<br /><br />
+                ${escapeHtml(intro)}
+                ${input.company ? `<br /><br />For ${escapeHtml(input.company)}.` : ""}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 20px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;border:1px solid #2a2a2a;border-radius:12px;">
+                  <tr>
+                    <td style="padding:14px 16px 4px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;">Reference</td>
+                    <td style="padding:14px 16px 4px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;text-align:right;">Invoice</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0 16px 14px;font-size:15px;font-weight:700;color:#ffffff;">${escapeHtml(formatOrderNumber(input.recordId))}</td>
+                    <td style="padding:0 16px 14px;font-size:15px;color:#d6d6d6;text-align:right;">${escapeHtml(input.invoice.number)}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0 16px 4px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#9a9a9a;">Amount acknowledged</td>
+                    <td style="padding:0 16px 4px;font-size:18px;font-weight:700;color:#12c8b0;text-align:right;">${escapeHtml(formatZar(amount))}</td>
+                  </tr>
+                  ${
+                    isDeposit
+                      ? `<tr>
+                    <td style="padding:0 16px 16px;font-size:13px;color:#9a9a9a;">Balance due after work</td>
+                    <td style="padding:0 16px 16px;font-size:14px;color:#ffffff;text-align:right;">${escapeHtml(formatZar(totals.balanceDue))}</td>
+                  </tr>`
+                      : `<tr>
+                    <td colspan="2" style="padding:0 16px 16px;font-size:14px;font-weight:700;color:#12c8b0;">Paid in full</td>
+                  </tr>`
+                  }
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 28px;font-size:14px;line-height:1.6;color:#9a9a9a;">
+                ${escapeHtml(followUp)}<br /><br />
+                If you have questions, reply to this email.<br />
+                ${escapeHtml(site.email)}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
+  return sendEmail({
+    to: input.to,
+    subject,
+    text,
+    html,
+  });
+}
+
 export type AdminInboxAlert = {
   kind: "ticket" | "contact" | "follow_up";
   recordId: string;

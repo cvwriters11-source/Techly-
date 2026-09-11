@@ -15,6 +15,8 @@ export type InvoiceDetails = {
   items: InvoiceLine[];
   calloutFee: number;
   depositPercent: number;
+  depositPaidAt: string | null;
+  paidAt: string | null;
 };
 
 type StoredInvoicePayload = {
@@ -23,6 +25,8 @@ type StoredInvoicePayload = {
   calloutFee: number;
   depositPercent: number;
   summary: string;
+  depositPaidAt?: string | null;
+  paidAt?: string | null;
 };
 
 export const invoiceTerms = [
@@ -41,6 +45,8 @@ export function emptyInvoice(): InvoiceDetails {
     items: [],
     calloutFee: 0,
     depositPercent: 50,
+    depositPaidAt: null,
+    paidAt: null,
   };
 }
 
@@ -103,6 +109,8 @@ export function encodeInvoiceDescription(invoice: InvoiceDetails) {
     calloutFee: invoice.calloutFee,
     depositPercent: invoice.depositPercent,
     summary: invoice.description,
+    depositPaidAt: invoice.depositPaidAt,
+    paidAt: invoice.paidAt,
   };
   return JSON.stringify(payload);
 }
@@ -110,7 +118,15 @@ export function encodeInvoiceDescription(invoice: InvoiceDetails) {
 export function decodeInvoiceDescription(
   raw: string,
   amount: number | null,
-): Pick<InvoiceDetails, "items" | "calloutFee" | "depositPercent" | "description"> {
+): Pick<
+  InvoiceDetails,
+  | "items"
+  | "calloutFee"
+  | "depositPercent"
+  | "description"
+  | "depositPaidAt"
+  | "paidAt"
+> {
   try {
     const parsed = JSON.parse(raw) as StoredInvoicePayload;
     if (parsed && parsed.v === 1 && Array.isArray(parsed.items)) {
@@ -122,6 +138,8 @@ export function decodeInvoiceDescription(
         calloutFee: Number(parsed.calloutFee) || 0,
         depositPercent: Number(parsed.depositPercent) || 50,
         description: parsed.summary || summarizeInvoiceItems(items),
+        depositPaidAt: parsed.depositPaidAt || null,
+        paidAt: parsed.paidAt || null,
       };
     }
   } catch {
@@ -134,6 +152,8 @@ export function decodeInvoiceDescription(
       calloutFee: 0,
       depositPercent: 50,
       description: raw,
+      depositPaidAt: null,
+      paidAt: null,
     };
   }
 
@@ -142,6 +162,8 @@ export function decodeInvoiceDescription(
     calloutFee: 0,
     depositPercent: 50,
     description: raw,
+    depositPaidAt: null,
+    paidAt: null,
   };
 }
 
@@ -213,6 +235,8 @@ export function invoiceFromForm(
       items,
       calloutFee,
       depositPercent,
+      depositPaidAt: null,
+      paidAt: null,
     },
   };
 }

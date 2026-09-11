@@ -85,6 +85,7 @@ export default async function AdminContactDetailPage({
         notifyEmail={contact.email}
         clientName={contact.name}
         emailConfigured={isEmailConfigured()}
+        source="contact"
         statuses={[
           { value: "new", label: "New" },
           { value: "contacted", label: "Contacted" },

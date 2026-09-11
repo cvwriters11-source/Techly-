@@ -116,6 +116,7 @@ export default async function AdminTicketDetailPage({
         notifyEmail={ticket.email}
         clientName={ticket.name}
         emailConfigured={isEmailConfigured()}
+        source="ticket"
         statuses={[
           { value: "new", label: "New" },
           { value: "in_progress", label: "In progress" },

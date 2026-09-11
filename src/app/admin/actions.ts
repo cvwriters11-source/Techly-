@@ -8,15 +8,23 @@ import {
   createAdminSession,
   requireAdmin,
 } from "@/lib/admin/session";
-import { sendClientUpdateEmail } from "@/lib/email";
+import { sendClientUpdateEmail, sendPaymentThankYouEmail } from "@/lib/email";
 import {
   contactStatusLabel,
+  formatDateTime,
   ticketStatusLabel,
 } from "@/lib/inbox/format";
-import { invoiceFromForm, suggestedInvoiceNumber } from "@/lib/inbox/invoice";
+import {
+  invoiceFromForm,
+  invoiceIsSendable,
+  suggestedInvoiceNumber,
+  type InvoiceDetails,
+} from "@/lib/inbox/invoice";
 import {
   contactStatuses,
   deleteContact,
+  getContact,
+  getTicket,
   ticketStatuses,
   updateContact,
   updateTicket,
@@ -91,10 +99,19 @@ export async function saveTicketUpdate(
     return { ok: false, message: parsedInvoice.message };
   }
 
+  const existing = await getTicket(id);
+  const invoiceToSave = parsedInvoice.include
+    ? {
+        ...parsedInvoice.invoice,
+        depositPaidAt: existing?.invoice.depositPaidAt ?? null,
+        paidAt: existing?.invoice.paidAt ?? null,
+      }
+    : null;
+
   const ticket = await updateTicket(id, {
     status,
     adminNote,
-    ...(parsedInvoice.include ? { invoice: parsedInvoice.invoice } : {}),
+    ...(invoiceToSave ? { invoice: invoiceToSave } : {}),
   });
   revalidatePath("/admin");
   revalidatePath("/admin/tickets");
@@ -131,13 +148,13 @@ export async function saveTicketUpdate(
       (status === "resolved"
         ? "Your ticket has been marked as resolved. If you still need help, reply to this email."
         : ""),
-    invoice: parsedInvoice.include ? parsedInvoice.invoice : null,
+    invoice: invoiceToSave,
   });
 
-  if (emailed.ok && parsedInvoice.include) {
+  if (emailed.ok && invoiceToSave) {
     await updateTicket(id, {
       invoice: {
-        ...parsedInvoice.invoice,
+        ...invoiceToSave,
         sentAt: new Date().toISOString(),
       },
     });
@@ -161,10 +178,10 @@ export async function saveTicketUpdate(
     ok: true,
     emailed: true,
     clientEmail: ticket.email,
-    invoiceNumber: parsedInvoice.include ? parsedInvoice.invoice.number : "",
+    invoiceNumber: invoiceToSave ? invoiceToSave.number : "",
     redirectTo: status === "resolved" ? "/admin/tickets" : undefined,
-    message: parsedInvoice.include
-      ? `The invoice ${parsedInvoice.invoice.number} was emailed to ${ticket.email} and saved in the invoice file.`
+    message: invoiceToSave
+      ? `The invoice ${invoiceToSave.number} was emailed to ${ticket.email} and saved in the invoice file.`
       : `Update emailed to ${ticket.email}.`,
   };
 }
@@ -187,10 +204,19 @@ export async function saveContactUpdate(
     return { ok: false, message: parsedInvoice.message };
   }
 
+  const existing = await getContact(id);
+  const invoiceToSave = parsedInvoice.include
+    ? {
+        ...parsedInvoice.invoice,
+        depositPaidAt: existing?.invoice.depositPaidAt ?? null,
+        paidAt: existing?.invoice.paidAt ?? null,
+      }
+    : null;
+
   const contact = await updateContact(id, {
     status,
     adminNote,
-    ...(parsedInvoice.include ? { invoice: parsedInvoice.invoice } : {}),
+    ...(invoiceToSave ? { invoice: invoiceToSave } : {}),
   });
   revalidatePath("/admin");
   revalidatePath("/admin/contacts");
@@ -222,13 +248,13 @@ export async function saveContactUpdate(
       (status === "closed"
         ? "Your enquiry has been marked as closed. If you still need help, reply to this email."
         : ""),
-    invoice: parsedInvoice.include ? parsedInvoice.invoice : null,
+    invoice: invoiceToSave,
   });
 
-  if (emailed.ok && parsedInvoice.include) {
+  if (emailed.ok && invoiceToSave) {
     await updateContact(id, {
       invoice: {
-        ...parsedInvoice.invoice,
+        ...invoiceToSave,
         sentAt: new Date().toISOString(),
       },
     });
@@ -252,11 +278,119 @@ export async function saveContactUpdate(
     ok: true,
     emailed: true,
     clientEmail: contact.email,
-    invoiceNumber: parsedInvoice.include ? parsedInvoice.invoice.number : "",
+    invoiceNumber: invoiceToSave ? invoiceToSave.number : "",
     redirectTo: status === "closed" ? "/admin/contacts" : undefined,
-    message: parsedInvoice.include
-      ? `The invoice ${parsedInvoice.invoice.number} was emailed to ${contact.email} and saved in the invoice file.`
+    message: invoiceToSave
+      ? `The invoice ${invoiceToSave.number} was emailed to ${contact.email} and saved in the invoice file.`
       : `Update emailed to ${contact.email}.`,
+  };
+}
+
+export async function markInvoicePayment(
+  _prev: RecordUpdateState,
+  formData: FormData,
+): Promise<RecordUpdateState> {
+  await requireAdmin();
+  const id = recordId(formData);
+  const source = String(formData.get("source") ?? "").trim();
+  const kind = String(formData.get("paymentKind") ?? "").trim();
+
+  if (source !== "contact" && source !== "ticket") {
+    return { ok: false, message: "Unknown record type." };
+  }
+  if (kind !== "deposit" && kind !== "full") {
+    return { ok: false, message: "Choose deposit or full payment." };
+  }
+
+  const record =
+    source === "contact" ? await getContact(id) : await getTicket(id);
+  if (!record) {
+    return { ok: false, message: "This record could not be found." };
+  }
+
+  if (!invoiceIsSendable(record.invoice)) {
+    return {
+      ok: false,
+      message: "Add and save an invoice before marking a payment.",
+    };
+  }
+
+  const now = new Date().toISOString();
+  let nextInvoice: InvoiceDetails = { ...record.invoice };
+
+  if (kind === "deposit") {
+    if (record.invoice.depositPaidAt) {
+      return {
+        ok: false,
+        message: `Deposit was already marked paid on ${formatDateTime(record.invoice.depositPaidAt)}.`,
+      };
+    }
+    nextInvoice = { ...nextInvoice, depositPaidAt: now };
+  } else {
+    if (record.invoice.paidAt) {
+      return {
+        ok: false,
+        message: `Full payment was already marked on ${formatDateTime(record.invoice.paidAt)}.`,
+      };
+    }
+    nextInvoice = {
+      ...nextInvoice,
+      depositPaidAt: nextInvoice.depositPaidAt || now,
+      paidAt: now,
+    };
+  }
+
+  const updated =
+    source === "contact"
+      ? await updateContact(id, { invoice: nextInvoice })
+      : await updateTicket(id, { invoice: nextInvoice });
+
+  if (!updated) {
+    return { ok: false, message: "The payment could not be saved." };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/invoices");
+  revalidatePath(
+    source === "contact" ? `/admin/contacts/${id}` : `/admin/tickets/${id}`,
+  );
+  revalidatePath(
+    source === "contact" ? "/admin/contacts" : "/admin/tickets",
+  );
+
+  if (!updated.email) {
+    return {
+      ok: false,
+      message:
+        "Payment marked, but this client has no email address so no thank-you email was sent.",
+    };
+  }
+
+  const emailed = await sendPaymentThankYouEmail({
+    to: updated.email,
+    name: updated.name,
+    company: updated.company,
+    recordId: updated.id,
+    invoice: nextInvoice,
+    kind,
+  });
+
+  if (!emailed.ok) {
+    return {
+      ok: false,
+      message: `Payment marked, but the thank-you email to ${updated.email} was not sent. ${emailed.error}`,
+    };
+  }
+
+  return {
+    ok: true,
+    emailed: true,
+    clientEmail: updated.email,
+    invoiceNumber: nextInvoice.number,
+    message:
+      kind === "deposit"
+        ? `Deposit marked paid and thank-you email sent to ${updated.email}.`
+        : `Full payment marked and thank-you email sent to ${updated.email}.`,
   };
 }
 

@@ -122,6 +122,8 @@ function invoiceFromRow(row: {
     items: decoded.items,
     calloutFee: decoded.calloutFee,
     depositPercent: decoded.depositPercent,
+    depositPaidAt: decoded.depositPaidAt,
+    paidAt: decoded.paidAt,
   };
 }
 

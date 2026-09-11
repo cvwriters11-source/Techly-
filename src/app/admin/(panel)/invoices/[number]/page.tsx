@@ -122,6 +122,16 @@ export default async function AdminInvoiceDetailPage({
             <span>Balance due after work</span>
             <span>{formatZar(totals.balanceDue)}</span>
           </p>
+          {row.invoice.depositPaidAt ? (
+            <p className="mt-3 text-xs text-accent">
+              Deposit marked paid {formatDateTime(row.invoice.depositPaidAt)}.
+            </p>
+          ) : null}
+          {row.invoice.paidAt ? (
+            <p className="mt-1 text-xs text-accent">
+              Paid in full {formatDateTime(row.invoice.paidAt)}.
+            </p>
+          ) : null}
         </div>
       </section>
 

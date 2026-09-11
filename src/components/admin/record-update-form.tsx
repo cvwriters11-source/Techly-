@@ -6,8 +6,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import type { RecordUpdateState } from "@/app/admin/actions";
+import { markInvoicePayment } from "@/app/admin/actions";
 import { formatDateTime, formatZar } from "@/lib/inbox/format";
 import {
+  invoiceIsSendable,
   invoicePaymentDetails,
   invoiceTerms,
   invoiceTotals,
@@ -113,6 +115,7 @@ export function RecordUpdateForm({
   notifyEmail,
   emailConfigured = true,
   clientName = "",
+  source,
 }: {
   action: (
     prev: RecordUpdateState,
@@ -127,10 +130,16 @@ export function RecordUpdateForm({
   notifyEmail?: string;
   emailConfigured?: boolean;
   clientName?: string;
+  source: "contact" | "ticket";
 }) {
   const [state, formAction, pending] = useActionState(action, initial);
+  const [paymentState, paymentAction, paymentPending] = useActionState(
+    markInvoicePayment,
+    initial,
+  );
   const router = useRouter();
   const [popupOpen, setPopupOpen] = useState(false);
+  const [paymentPopupOpen, setPaymentPopupOpen] = useState(false);
   const [items, setItems] = useState<InvoiceLine[]>(
     invoice.items.length > 0 ? invoice.items : [emptyLine()],
   );
@@ -150,14 +159,24 @@ export function RecordUpdateForm({
       }),
     [items, calloutFee, depositPercent],
   );
+  const canMarkPayment = invoiceIsSendable(invoice);
 
   useEffect(() => {
     if (state.ok && state.message) setPopupOpen(true);
   }, [state]);
 
+  useEffect(() => {
+    if (paymentState.ok && paymentState.message) setPaymentPopupOpen(true);
+  }, [paymentState]);
+
   function closePopup() {
     setPopupOpen(false);
     if (state.redirectTo) router.push(state.redirectTo);
+  }
+
+  function closePaymentPopup() {
+    setPaymentPopupOpen(false);
+    if (paymentState.ok) router.refresh();
   }
 
   function updateLine(index: number, patch: Partial<InvoiceLine>) {
@@ -169,6 +188,7 @@ export function RecordUpdateForm({
   }
 
   return (
+    <div className="space-y-4">
     <form
       action={formAction}
       className="space-y-4 rounded-[1.4rem] border border-white/12 bg-[#111] p-5"
@@ -389,6 +409,16 @@ export function RecordUpdateForm({
             <span>Balance due after work</span>
             <span>{formatZar(totals.balanceDue)}</span>
           </p>
+          {invoice.depositPaidAt ? (
+            <p className="mt-3 text-xs text-accent">
+              Deposit marked paid {formatDateTime(invoice.depositPaidAt)}.
+            </p>
+          ) : null}
+          {invoice.paidAt ? (
+            <p className="mt-1 text-xs text-accent">
+              Paid in full {formatDateTime(invoice.paidAt)}.
+            </p>
+          ) : null}
         </div>
 
         <label className="block">
@@ -430,5 +460,72 @@ export function RecordUpdateForm({
         onClose={closePopup}
       />
     </form>
+
+    {canMarkPayment ? (
+      <div className="space-y-4 rounded-[1.4rem] border border-white/12 bg-[#111] p-5">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
+            Payment received
+          </p>
+          <p className="mt-1 text-xs text-white/45">
+            Mark the deposit or full payment when the client pays. A thank-you
+            email is sent automatically.
+          </p>
+        </div>
+        {paymentState.message && !paymentState.ok ? (
+          <p
+            role="status"
+            className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100"
+          >
+            {paymentState.message}
+          </p>
+        ) : null}
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <form action={paymentAction} className="flex-1">
+            <input type="hidden" name="recordId" value={id} />
+            <input type="hidden" name="source" value={source} />
+            <input type="hidden" name="paymentKind" value="deposit" />
+            <Button
+              type="submit"
+              variant="solid"
+              className="w-full"
+              disabled={
+                paymentPending || Boolean(invoice.depositPaidAt) || Boolean(invoice.paidAt)
+              }
+            >
+              {invoice.depositPaidAt || invoice.paidAt
+                ? "Deposit already marked"
+                : paymentPending
+                  ? "Sending…"
+                  : "Mark deposit paid"}
+            </Button>
+          </form>
+          <form action={paymentAction} className="flex-1">
+            <input type="hidden" name="recordId" value={id} />
+            <input type="hidden" name="source" value={source} />
+            <input type="hidden" name="paymentKind" value="full" />
+            <Button
+              type="submit"
+              variant="solid"
+              className="w-full"
+              disabled={paymentPending || Boolean(invoice.paidAt)}
+            >
+              {invoice.paidAt
+                ? "Already paid in full"
+                : paymentPending
+                  ? "Sending…"
+                  : "Mark paid in full"}
+            </Button>
+          </form>
+        </div>
+        <EmailSentPopup
+          open={paymentPopupOpen && Boolean(paymentState.message)}
+          message={paymentState.message}
+          invoiceNumber={paymentState.invoiceNumber}
+          onClose={closePaymentPopup}
+        />
+      </div>
+    ) : null}
+    </div>
   );
 }
