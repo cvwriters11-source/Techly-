@@ -114,14 +114,19 @@ async function sendWithResend(input: MailPayload): Promise<SendEmailResult> {
 
 async function sendWithSmtp(input: MailPayload): Promise<SendEmailResult> {
   const port = Number(env("SMTP_PORT") || "587");
+  const secure = env("SMTP_SECURE") === "true" || port === 465;
   const transporter = nodemailer.createTransport({
     host: env("SMTP_HOST"),
     port,
-    secure: env("SMTP_SECURE") === "true" || port === 465,
+    secure,
+    requireTLS: !secure && (port === 587 || port === 2525),
     auth:
       env("SMTP_USER") && env("SMTP_PASS")
         ? { user: env("SMTP_USER"), pass: env("SMTP_PASS") }
         : undefined,
+    connectionTimeout: 20_000,
+    greetingTimeout: 20_000,
+    socketTimeout: 30_000,
   });
 
   await transporter.sendMail({
