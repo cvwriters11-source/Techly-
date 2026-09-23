@@ -5,7 +5,7 @@ import { HeroIllustration } from "@/components/hero-illustration";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/section";
 import { cn } from "@/lib/utils";
-import { heroSlides, stats } from "@/lib/site";
+import { heroActions, heroSlides, stats } from "@/lib/site";
 
 const INTERVAL = 7000;
 
@@ -45,8 +45,12 @@ export function HeroSlider() {
             <p className="mt-6 max-w-xl text-base leading-relaxed text-white sm:text-lg">
               {slide.text}
             </p>
-            <div className="mt-8">
-              <Button href={slide.href}>{slide.cta}</Button>
+            <div className="mt-8 flex flex-wrap gap-3">
+              {heroActions.map((action) => (
+                <Button key={action.href} href={action.href}>
+                  {action.label}
+                </Button>
+              ))}
             </div>
           </div>
 

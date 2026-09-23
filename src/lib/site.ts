@@ -72,6 +72,21 @@ export const heroSlides = [
   },
 ] as const;
 
+export const heroActions = [
+  {
+    label: "CCTV Camera Installation",
+    href: "/services/cctv-installations",
+  },
+  {
+    label: "IT Support",
+    href: "/services/it-support",
+  },
+  {
+    label: "Software Development",
+    href: "/services/software-development",
+  },
+] as const;
+
 export const stats = [
   { value: "200+", label: "Web Services Deployed" },
   { value: "50+", label: "Clients Managed" },
