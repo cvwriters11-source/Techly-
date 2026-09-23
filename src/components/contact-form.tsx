@@ -297,7 +297,6 @@ export function ContactForm({
         options={serviceOptions}
         placeholder="Select a service"
         defaultValue={defaultService}
-        startOpen={Boolean(defaultService)}
         error={state.fieldErrors?.service}
         onChange={setService}
       />

@@ -62,9 +62,14 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number) {
   return lines.length ? lines : [""];
 }
 
+/** Use the small circular badge. pdf-lib embeds the full PNG, and the 1MB site badge pushes SMTP over the size limit (552 5.3.4). */
+const MAX_LOGO_BYTES = 120_000;
+
 async function loadLogo() {
   try {
-    return await readFile(path.join(process.cwd(), "public", "techly-badge.png"));
+    const bytes = await readFile(path.join(process.cwd(), "public", "techly-invoice-logo.png"));
+    if (bytes.byteLength > MAX_LOGO_BYTES) return null;
+    return bytes;
   } catch {
     return null;
   }
@@ -109,9 +114,26 @@ export async function buildInvoicePdf(input: InvoicePdfInput) {
       width: 72,
       height: 72,
     });
+  } else {
+    page.drawEllipse({
+      x: margin + 28,
+      y: height - 72,
+      xScale: 26,
+      yScale: 26,
+      color: teal,
+    });
+    const mark = "T";
+    const markWidth = bold.widthOfTextAtSize(mark, 22);
+    page.drawText(mark, {
+      x: margin + 28 - markWidth / 2,
+      y: height - 80,
+      size: 22,
+      font: bold,
+      color: navy,
+    });
   }
 
-  const headerX = logoBytes ? margin + 88 : margin;
+  const headerX = margin + 88;
   page.drawText("TECHLY PC", {
     x: headerX,
     y: height - 58,

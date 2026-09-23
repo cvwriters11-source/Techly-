@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DetailList, StatusBadge } from "@/components/admin/detail-list";
+import { Logo } from "@/components/logo";
 import { formatDateTime, formatZar } from "@/lib/inbox/format";
 import {
   invoiceTermsFor,
@@ -33,14 +34,19 @@ export default async function AdminInvoiceDetailPage({
         <Link href="/admin/invoices" className="text-sm text-accent">
           ← Invoice file
         </Link>
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-semibold text-white">
-            {row.invoice.number}
-          </h1>
-          <StatusBadge
-            label={row.source === "ticket" ? "Ticket" : "Contact"}
-            className="border-white/12 bg-white/5 text-white/75"
-          />
+        <div className="mt-3 flex flex-wrap items-center gap-4">
+          <Logo compact />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-3xl font-semibold text-white">
+                {row.invoice.number}
+              </h1>
+              <StatusBadge
+                label={row.source === "ticket" ? "Ticket" : "Contact"}
+                className="border-white/12 bg-white/5 text-white/75"
+              />
+            </div>
+          </div>
         </div>
         <p className="mt-2 text-sm text-white/55">
           {row.invoice.sentAt

@@ -383,13 +383,35 @@ export async function sendClientUpdateEmail(input: ClientUpdateEmail) {
     }
   }
 
-  return sendEmail({
+  const sent = await sendEmail({
     to: input.to,
     subject,
     text,
     html,
     attachments,
   });
+
+  if (
+    !sent.ok &&
+    attachments?.length &&
+    /552|maximum message size|message size/i.test(sent.error)
+  ) {
+    const withoutPdf = text.replace(
+      `A PDF invoice is attached: ${invoice?.number ?? ""}`,
+      "Invoice details are included in this email.",
+    );
+    return sendEmail({
+      to: input.to,
+      subject,
+      text: withoutPdf,
+      html: html.replace(
+        "The branded PDF invoice is attached to this email.<br />",
+        "Invoice details are included in this email.<br />",
+      ),
+    });
+  }
+
+  return sent;
 }
 
 export type PaymentThankYouEmail = {
