@@ -50,8 +50,32 @@ export function isEmailConfigured() {
   return Boolean(env("RESEND_API_KEY") || env("SMTP_HOST"));
 }
 
-function adminInboxTo() {
-  return env("ADMIN_NOTIFY_EMAIL") || env("ADMIN_EMAIL");
+/** Always receive client consultation requests, in addition to ADMIN_EMAIL. */
+const CONSULTATION_INBOX = "sam@techlypc.co.za";
+
+function adminInboxRecipients(includeConsultationCopy: boolean) {
+  const raw = [
+    env("ADMIN_NOTIFY_EMAIL"),
+    env("ADMIN_EMAIL"),
+    includeConsultationCopy ? CONSULTATION_INBOX : "",
+  ];
+  const seen = new Set<string>();
+  const recipients: string[] = [];
+  for (const value of raw) {
+    const email = value.trim();
+    const key = email.toLowerCase();
+    if (!email.includes("@") || seen.has(key)) continue;
+    seen.add(key);
+    recipients.push(email);
+  }
+  return recipients;
+}
+
+function recipientList(to: string) {
+  return to
+    .split(/[,;]/)
+    .map((email) => email.trim())
+    .filter((email) => email.includes("@"));
 }
 
 function adminBaseUrl() {
@@ -88,7 +112,7 @@ async function sendWithResend(input: MailPayload): Promise<SendEmailResult> {
     },
     body: JSON.stringify({
       from: fromAddress(),
-      to: [input.to],
+      to: recipientList(input.to),
       reply_to: input.replyTo || site.email,
       subject: input.subject,
       text: input.text,
@@ -747,10 +771,11 @@ export type AdminInboxAlert = {
 };
 
 export async function notifyAdminInbox(alert: AdminInboxAlert) {
-  const to = adminInboxTo();
-  if (!to) {
+  const recipients = adminInboxRecipients(alert.kind === "contact");
+  if (recipients.length === 0) {
     return { ok: false as const, error: "ADMIN_EMAIL is not set." };
   }
+  const to = recipients.join(", ");
 
   const titles = {
     ticket: "New support ticket",

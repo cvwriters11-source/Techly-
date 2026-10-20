@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { HeroIllustration } from "@/components/hero-illustration";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/section";
 import { cn } from "@/lib/utils";
@@ -54,7 +54,24 @@ export function HeroSlider() {
             </div>
           </div>
 
-          <HeroIllustration />
+          <div
+            key={slide.image}
+            className="relative mx-auto aspect-[4/3] w-full max-w-[580px] animate-[reveal-in_0.55s_ease-out] overflow-hidden rounded-[1.8rem] border border-white/12"
+          >
+            <Image
+              src={slide.image}
+              alt={slide.imageAlt}
+              fill
+              priority={index === 0}
+              className="object-cover"
+              sizes="(min-width: 1024px) 46vw, 100vw"
+            />
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent px-5 pb-5 pt-16">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+                {slide.eyebrow}
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="mt-6 flex justify-center gap-2 lg:justify-start">
@@ -63,7 +80,7 @@ export function HeroSlider() {
               key={item.title}
               type="button"
               aria-label={`Show: ${item.title}`}
-              aria-current={slideIndex === index}
+              aria-current={slideIndex === index ? "true" : undefined}
               onClick={() => goTo(slideIndex)}
               className={cn(
                 "h-2 rounded-full transition-all",

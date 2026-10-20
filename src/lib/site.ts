@@ -30,45 +30,49 @@ export const site = {
 
 export const heroSlides = [
   {
-    eyebrow: "Software & IT",
-    title: "Software Development & IT Support",
-    text: "Custom software development and business IT support for organisations across South Africa, with remote services nationwide and onsite assistance available in Gauteng.",
-    cta: "Learn More",
-    href: "#services",
-    visual: "illustration",
-  },
-  {
-    eyebrow: "Build",
+    eyebrow: "Software",
     title: "Custom Software Built Around Your Business",
-    text: "Web applications, ERP and CRM platforms, workflow systems and integrations designed around how your team actually works — not generic software you have to fight.",
-    cta: "Explore Software",
+    text: "Web applications, ERP and CRM platforms, workflow systems and integrations designed around how your team actually works.",
     href: "/services/software-development",
-    visual: "software",
     image:
       "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1400&q=80",
     imageAlt: "Developer writing software on multiple screens",
   },
   {
+    eyebrow: "Websites",
+    title: "Websites Designed Around Your Brand",
+    text: "User-focused websites that combine technical work with a design that reflects your brand and brings people to you.",
+    href: "/services/software-development",
+    image:
+      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1400&q=80",
+    imageAlt: "Laptop on a desk during website development",
+  },
+  {
     eyebrow: "Support",
     title: "IT Support That Keeps Your Team Productive",
-    text: "Remote helpdesk, Microsoft 365, networks, backups and cybersecurity — so downtime stays low without the cost of a full in-house IT department.",
-    cta: "View IT Support",
+    text: "Remote helpdesk, Microsoft 365, networks, backups and cybersecurity — so downtime stays low without a full in-house IT department.",
     href: "/services/it-support",
-    visual: "support",
     image:
       "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1400&q=80",
     imageAlt: "Technician providing business IT support",
   },
   {
     eyebrow: "Automate",
-    title: "Automate Workflows and Connect Your Systems",
-    text: "WhatsApp and document automation, reporting dashboards, hosting and cloud integrations that remove repetitive work and give you a clearer view of the business.",
-    cta: "See Automation",
+    title: "Hosting, Cloud and Automation",
+    text: "Secure hosting, cloud infrastructure, WhatsApp and document automation, and reporting that keeps the business visible.",
     href: "/services/business-automation",
-    visual: "automation",
     image:
       "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1400&q=80",
     imageAlt: "Server and cloud infrastructure",
+  },
+  {
+    eyebrow: "Secure",
+    title: "CCTV Camera Installations",
+    text: "Cameras, recording and remote viewing for offices, warehouses, retail and homes — installed and cabled properly.",
+    href: "/services/cctv-installations",
+    image:
+      "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=1400&q=80",
+    imageAlt: "Security camera installed on a commercial building",
   },
 ] as const;
 
